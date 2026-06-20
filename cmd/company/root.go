@@ -14,6 +14,7 @@ import (
 )
 
 const urlCompanyProfilePost = "https://www.cse.lk/api/companyProfile"
+const urlCompanyFinancialDataPost = "https://www.cse.lk/api/financials"
 
 func FetchCompanyProfileBySymbol(companySymbol string) (*customStructs.CompanyProfile, error) {
 	data := url.Values{}
@@ -45,14 +46,50 @@ func FetchCompanyProfileBySymbol(companySymbol string) (*customStructs.CompanyPr
 		return nil, fmt.Errorf("read company profile: %w", err)
 	}
 
-	// 1. Instantiate an empty CompanyProfile struct
 	var profile customStructs.CompanyProfile
 
-	// 2. Unmarshal the json bytes directly into the struct pointer
 	if err := json.Unmarshal(body, &profile); err != nil {
 		return nil, fmt.Errorf("parse company profile json: %w", err)
 	}
 
-	// 3. Return the populated struct pointer
 	return &profile, nil
+}
+
+func FetchCompanyFinancialDataBySymbol(companySymbol string) (*customStructs.FinancialDataPayload, error) {
+	data := url.Values{}
+	data.Set("symbol", companySymbol)
+
+	req, err := http.NewRequest("POST", urlCompanyFinancialDataPost, strings.NewReader(data.Encode()))
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+	req.Header.Set("Accept", "application/json, text/plain, */*")
+	req.Header.Set("Origin", "https://www.cse.lk")
+	req.Header.Set("Referer", "https://www.cse.lk/")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari")
+
+	resp, err := httpclient.Default.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request company financial data: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("request company financial data: unexpected status %s", resp.Status)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read company financial data: %w", err)
+	}
+
+	var financialDataPayload customStructs.FinancialDataPayload
+
+	if err := json.Unmarshal(body, &financialDataPayload); err != nil {
+		return nil, fmt.Errorf("parse company financial data json: %w", err)
+	}
+
+	return &financialDataPayload, nil
 }
