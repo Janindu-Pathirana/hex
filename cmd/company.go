@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Janindu-Pathirana/hex/cmd/company"
+	"github.com/Janindu-Pathirana/hex/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -96,7 +97,8 @@ var showCompanyProfileCmd = &cobra.Command{
 			fmt.Println("Error fetching company profile:", err)
 			return
 		}
-		fmt.Println(companyProfile)
+
+		util.PrettyPrintJSON(companyProfile)
 	},
 }
 
