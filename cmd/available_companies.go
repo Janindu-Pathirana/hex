@@ -9,21 +9,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Janindu-Pathirana/hex/internal"
 	"github.com/Janindu-Pathirana/hex/internal/httpclient"
 	"github.com/spf13/cobra"
 )
 
-const (
-	urlCompanySymbolList       = "https://www.cse.lk/chat/company_symbol_list.csv"
-	availableCompaniesCacheTTL = 24 * time.Hour
-)
+const urlCompanySymbolList = "https://www.cse.lk/chat/company_symbol_list.csv"
 
 func availableCompaniesCacheFile() (string, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return "", fmt.Errorf("resolve cache directory: %w", err)
 	}
-	return filepath.Join(cacheDir, "hex", "available_companies.txt"), nil
+	return filepath.Join(cacheDir, internal.CacheDir, internal.AvailableCompaniesCache.CacheFile), nil
 }
 
 func loadCachedAvailableCompanies() ([]string, error) {
@@ -40,7 +38,7 @@ func loadCachedAvailableCompanies() ([]string, error) {
 		return nil, fmt.Errorf("stat available companies cache: %w", err)
 	}
 
-	if time.Since(info.ModTime()) > availableCompaniesCacheTTL {
+	if time.Since(info.ModTime()) > internal.AvailableCompaniesCache.CacheTTL {
 		return nil, nil
 	}
 
