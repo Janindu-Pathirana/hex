@@ -1,4 +1,4 @@
-package cmd
+package company
 
 import (
 	"fmt"
@@ -11,7 +11,6 @@ import (
 
 	"github.com/Janindu-Pathirana/hex/internal"
 	"github.com/Janindu-Pathirana/hex/internal/httpclient"
-	"github.com/spf13/cobra"
 )
 
 const urlCompanySymbolList = "https://www.cse.lk/chat/company_symbol_list.csv"
@@ -79,7 +78,7 @@ func saveAvailableCompanies(companies []string) error {
 	return nil
 }
 
-var fetchAllAvailableCompanies = func() (companies []string, err error) {
+func FetchAllAvailableCompanies() (companies []string, err error) {
 	companies, err = loadCachedAvailableCompanies()
 	if err != nil {
 		return nil, err
@@ -137,23 +136,48 @@ var fetchAllAvailableCompanies = func() (companies []string, err error) {
 	return companies, nil
 }
 
-var availableCompaniesCmd = &cobra.Command{
-	Use:   "available-companies",
-	Short: "Print the available companies in the stock market",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		companies, err := fetchAllAvailableCompanies()
-		if err != nil {
-			return fmt.Errorf("fetch available companies: %w", err)
-		}
+func FetchAvailableCompanyNames() ([]string, error) {
+	companies, err := FetchAllAvailableCompanies()
+	if err != nil {
+		return nil, err
+	}
 
-		for _, company := range companies {
-			fmt.Println(company)
-		}
+	//VALLIBEL POWER ERATHNA PLC,VPEL.N0000
 
-		return nil
-	},
+	companyNames := make([]string, 0, len(companies))
+	for _, company := range companies {
+		companyNames = append(companyNames, strings.Split(company, ",")[0])
+	}
+	return companyNames, nil
 }
 
-func init() {
-	rootCmd.AddCommand(availableCompaniesCmd)
+func FetchAvailableCompanySymbols() ([]string, error) {
+	companies, err := FetchAllAvailableCompanies()
+	if err != nil {
+		return nil, err
+	}
+
+	//VALLIBEL POWER ERATHNA PLC,VPEL.N0000
+
+	seen := make(map[string]bool)
+	symbols := make([]string, 0, len(companies))
+
+	for _, company := range companies {
+
+		parts := strings.Split(company, ",")
+		if len(parts) < 2 {
+			continue
+		}
+
+		code := parts[1]
+		symbol := strings.Split(code, ".")[0]
+		symbol = strings.TrimSpace(symbol)
+
+		if !seen[symbol] {
+			seen[symbol] = true
+			symbols = append(symbols, symbol)
+		}
+	}
+
+	return symbols, nil
 }
