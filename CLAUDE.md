@@ -19,8 +19,9 @@ go build -ldflags "-X github.com/Janindu-Pathirana/hex/cmd.Version=0.1.0" -o hex
 | `main.go` | Calls `cmd.Execute()`; embeds tzdata |
 | `cmd/root.go` | `NewRootCmd()` builds the tree; `app` holds injectable deps (the CSE client) |
 | `cmd/<group>.go` | Cobra wiring for a group: `new<Group>Cmd(a *app)` constructors, flags (`company.go`, `sync.go`, `reports.go`, `fundamentals.go`, `clean.go`, `version.go`) |
+| `cmd/analyze.go`, `cmd/analyze/` | `hex analyze <SYMBOL>`: reads only the store (`analyze.Load` builds the `Snapshot`), prints the report as text or `--json`, `--section` filters |
 | `cmd/calc.go` | `hex calc <ratio>`: one subcommand generated per `analysis.Registry` entry, `hex calc list` |
-| `internal/analysis/` | Pure ratio engine: `Registry` of `Ratio{Inputs, Formula, Compute}` returning `Result{Value, Display, Steps}` |
+| `internal/analysis/` | Pure ratio engine: `Registry` of `Ratio{Inputs, Formula, Compute}` returning `Result{Value, Display, Steps}`. `Snapshot` (period series, TTM, YoY) → `Compute` (metrics) → `Evaluate` (rule findings) → `Report` (`Analyze`, `Render`, `Filter`). No I/O, no LLM |
 | `cmd/args.go` | Shared symbol completion (`ValidArgsFunction`) and legacy flag-name normalisation |
 | `cmd/<group>/` | Logic for that group (`cmd/company/`: cached securities, symbol resolution, report views) |
 | `internal/cse/` | cse.lk client: `Client{BaseURL, SiteURL, CDNBase, HTTP, DownloadHTTP, Observe}`, `post`/`get` with retries and size caps, one method per endpoint, `DownloadPDF`, `ErrNoData`, `ErrUnknownSymbol`, `Resolve` |
@@ -53,7 +54,7 @@ go build -ldflags "-X github.com/Janindu-Pathirana/hex/cmd.Version=0.1.0" -o hex
 
 ## Roadmap
 
-The approved data-platform plan (CSE + CBSL sources, SQLite store, PDF fundamentals, analysis) is phased: 0 foundation (done), 1 store and sync (done: scrape engine), 2 history (done: accumulated daily bars), 3 corporate actions (partial: announcements stored and classified by category; dates need the unverified detail endpoint), 4 technical analysis, 5 fundamentals from PDFs (done: rules + opt-in LLM), 6 CBSL macro, 7 screener/watchlist/portfolio and release.
+The approved data-platform plan (CSE + CBSL sources, SQLite store, PDF fundamentals, analysis) is phased: 0 foundation (done), 1 store and sync (done: scrape engine), 2 history (done: accumulated daily bars), 3 corporate actions (partial: announcements stored and classified by category; dates need the unverified detail endpoint), 4 technical analysis (`hex analyze` phase 1 done: fundamentals, valuation, growth, cash, dividends, data-quality findings; indicators, benchmarks, scores, bank/insurer rules and opt-in `--narrate` are next), 5 fundamentals from PDFs (done: rules + opt-in LLM), 6 CBSL macro, 7 screener/watchlist/portfolio and release.
 
 ## Known tech debt (fix when touching the area)
 
