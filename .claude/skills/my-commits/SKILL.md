@@ -1,11 +1,11 @@
 ---
-name: my-commits
+name: "my-commits"
 description: Write git commit messages in my personal style and split working-tree changes into logical commit groups. Every message starts with a prefix (feat, bugfix, refac, test, docs, …) followed by a colon, then a short subject saying what changed, and a short body saying why and how. Use this skill whenever I ask to commit, make commits, write a commit message, "commit my changes", "group these changes", "split this into commits", stage things, or tidy up a messy working tree before pushing — even if I don't mention the format or the word "skill".
 ---
 
 # My commits
 
-Two jobs: **group** the changes into logical commits, and **write** each message in my format. Propose first, commit only after I say OK.
+Two jobs: **group** the changes into logical commits, and **write** each message in my format. When I say "commit", that's the go-ahead: group the files and make the commits straight away, then show me what was done. Don't stop to ask for approval of the plan.
 
 ## Message format
 
@@ -89,6 +89,22 @@ Bad (and why):
 
 One commit = one logical change that makes sense on its own. The guiding question: *if someone reverts this commit, does exactly one idea disappear?*
 
+When several files changed, never lump them into one commit, and never make one commit per file. Group them.
+
+### Pairing a file with its test
+
+The most common group is a source file plus its unit test, for example a route and the route's test. Match them by name and location:
+
+| Source file | Its test file(s) |
+|---|---|
+| `src/routes/orders.js` | `src/routes/orders.test.js`, `orders.spec.js`, `__tests__/orders.js` |
+| `app/routers/user.py` | `tests/routers/test_user.py`, `tests/test_user.py` |
+| `UserController.java` | `UserControllerTest.java` |
+| `handler.go` | `handler_test.go` |
+| `user.service.ts` | `user.service.spec.ts` |
+
+If the names don't line up, open the test and check what it imports. A test that imports the route belongs with the route.
+
 Keep together:
 - **Code and its tests** — `router.ts` + `router.test.ts`, `user_service.py` + `test_user_service.py`. A test belongs with the code it tests, not in a separate `test:` commit. (`test:` is only for test-only work, like adding missing coverage to old code.)
 - **Code and the config/types/fixtures it needs** to work.
@@ -110,21 +126,14 @@ Never commit secrets or junk: `.env`, credentials, keys, build output, `node_mod
 
 1. **Look.** Run `git status`, `git diff`, `git diff --staged`, and check untracked files. Read enough of each diff to understand the intent — don't guess from file names alone.
 2. **Group.** Build the commit groups using the rules above.
-3. **Propose.** Show the plan, in order:
+3. **Commit each group, in order.** Stage only that group's files with `git add <paths>`, or `git add -p` for a file split across commits. Never use `git add -A` or `git add .`, because that sweeps in unrelated changes. Commit with `git commit -m "<subject>" -m "<body>"`. Check `git status` between commits so nothing lands in the wrong group.
+4. **Report.** Show `git log --oneline -n <count>`, list which files went into each commit, and mention anything left uncommitted and why (secrets, build output). Don't push unless I ask.
 
-   ```
-   1. feat: add rate limiting to login endpoint
-      Files: src/routes/login.ts, src/routes/login.test.ts, src/lib/rateLimit.ts
-      Body:
-        Stops brute-force password guessing on /login.
-        Counts attempts per IP in Redis and returns 429 after 5 per minute.
+Stop and ask before committing only in these cases:
+- A file looks like a secret or credential and isn't gitignored. Leave it out and tell me.
+- I asked for a plan or a preview ("show me the groups first", "what would you commit?"). Then show the plan and wait.
+- Nothing is changed, or there are merge conflicts. Say so instead of committing.
 
-   2. deps: add ioredis
-      Files: package.json, package-lock.json
-   ```
-
-   Mention anything skipped (and why) and any file split across commits by hunk. Then ask for OK.
-4. **Commit after OK.** For each group, stage only its files — `git add <paths>` (or `git add -p` for partial files); never `git add -A` or `git add .`, since that sweeps in unrelated changes. Commit with `git commit -m "<subject>" -m "<body>"`. If I edit a message or regroup, use my version.
-5. **Confirm.** Show `git log --oneline -n <count>` so I can see the result. Don't push unless I ask.
+If I later want a commit reworded or regrouped and it hasn't been pushed, fix it with `git commit --amend` or a soft reset.
 
 If I only ask for a message (e.g., "write a commit message for this diff"), skip grouping and just give the message in the format above.
