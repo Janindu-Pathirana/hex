@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Annual Report as at 31st March 2026",
+    "date": "2026-05-26",
+    "uploaded": "2026-05-26 15:28",
+    "authorized": "2026-05-26 16:57",
+    "url": "https://cdn.cse.lk/cmt/upload_report_file/508_1779789508055.pdf"
+  },
+  {
+    "title": "Annual Report 2024/25",
+    "date": "2025-03-31",
+    "uploaded": "2025-05-27 16:38",
+    "authorized": null,
+    "url": "https://cdn.cse.lk/cmt/upload_report_file/508_1748344127576.pdf"
+  }
+]

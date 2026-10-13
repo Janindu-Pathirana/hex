@@ -53,6 +53,28 @@ go install .
 hex version
 ```
 
+## Usage
+
+```bash
+hex company list                      # NAME,CODE for every listed security (N, X and U series)
+hex company list --symbols            # unique tickers
+hex company show-profile jkh          # profile JSON; symbols are case-insensitive
+hex company profile CIC.X0000         # full codes select a specific series
+hex company show-financial JKH        # all report sections with PDF URLs
+hex company show-financial JKH -q     # only quarterly reports (-a annual, -o other, -w web links, -r extra, -b banner)
+hex clean all                         # remove cached data
+hex completion zsh > "${fpath[1]}/_hex"   # shell completion (also bash, fish, powershell)
+```
+
+Errors go to stderr and exit with status 1. The symbol list is cached for 24h under the user cache directory (`HEX_CACHE_DIR` overrides it).
+
+## Test
+
+```bash
+go vet ./... && go test -race -cover ./...
+go test ./cmd -update                 # regenerate golden files after an intended output change
+```
+
 ## Homebrew (private)
 
 This repo includes a Homebrew formula at `Formula/hex.rb`. Use it as a private tap.

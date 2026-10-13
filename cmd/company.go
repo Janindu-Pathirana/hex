@@ -1,220 +1,204 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
-
 	"strings"
 
 	"github.com/Janindu-Pathirana/hex/cmd/company"
-	customStructs "github.com/Janindu-Pathirana/hex/internal/custom-structs"
-	"github.com/Janindu-Pathirana/hex/internal/util"
+	"github.com/Janindu-Pathirana/hex/internal/cse"
+	"github.com/Janindu-Pathirana/hex/internal/output"
 	"github.com/spf13/cobra"
 )
 
-var onlyNames bool
-var onlySymbol bool
+func newCompanyCmd(a *app) *cobra.Command {
+	companyCmd := &cobra.Command{
+		Use:   "company",
+		Short: "Fetch and display company data",
+	}
+	companyCmd.AddCommand(
+		newCompanyListCmd(a),
+		newCompanyProfileCmd(a),
+		newCompanyFinancialCmd(a),
+	)
+	return companyCmd
+}
 
-var showAnnualData bool
-var showQuarterlyData bool
-var showOtherData bool
-var showBannerAd bool
-var showWebLink bool
-var showReqFinancial bool
-var showCompanyBannerAd bool
+func newCompanyListCmd(a *app) *cobra.Command {
+	var namesOnly, symbolsOnly bool
 
-var getValidArgs = func() []string {
-	symbols, err := company.FetchAvailableCompanySymbols()
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List all available companies",
+		Example: `  hex company list
+  hex company list --symbols`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			secs, err := company.Securities(cmd.Context(), a.cse)
+			if err != nil {
+				return err
+			}
 
-	if err != nil {
-		return nil
+			var lines []string
+			switch {
+			case namesOnly:
+				seen := make(map[string]bool)
+				for _, s := range secs {
+					if !seen[s.Name] {
+						seen[s.Name] = true
+						lines = append(lines, strings.ReplaceAll(s.Name, " ", "-"))
+					}
+				}
+			case symbolsOnly:
+				lines = cse.Tickers(secs)
+			default:
+				for _, s := range secs {
+					lines = append(lines, s.Name+","+s.Code)
+				}
+			}
+
+			w := cmd.OutOrStdout()
+			for _, l := range lines {
+				if _, err := fmt.Fprintln(w, l); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
 	}
 
-	return symbols
+	cmd.Flags().SetNormalizeFunc(legacyFlags(map[string]string{
+		"onlyNames":  "names",
+		"onlySymbol": "symbols",
+	}))
+	cmd.Flags().BoolVarP(&namesOnly, "names", "n", false, "Print only company names")
+	cmd.Flags().BoolVarP(&symbolsOnly, "symbols", "s", false, "Print only ticker symbols")
+	cmd.MarkFlagsMutuallyExclusive("names", "symbols")
+	return cmd
 }
 
-var companyCmd = &cobra.Command{
-	Use:   "company",
-	Short: "Fetch and display company data",
-}
-
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all available companies",
-	Run: func(cmd *cobra.Command, args []string) {
-
-		if onlyNames {
-			companies, err := company.FetchAvailableCompanyNames()
+func newCompanyProfileCmd(a *app) *cobra.Command {
+	return &cobra.Command{
+		Use:               "show-profile <SYMBOL>",
+		Aliases:           []string{"profile"},
+		Short:             "Show company profile",
+		Example:           "  hex company show-profile JKH\n  hex company profile cic.x0000",
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: a.completeSymbols,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			sec, err := a.resolve(cmd, args[0])
 			if err != nil {
-				fmt.Println("Error fetching available companies:", err)
-				return
+				return err
 			}
-			for _, name := range companies {
-				fmt.Println(strings.ReplaceAll(name, " ", "-"))
-			}
-			return
-		} else if onlySymbol {
-
-			symbols, err := company.FetchAvailableCompanySymbols()
+			profile, err := a.cse.CompanyProfile(cmd.Context(), sec.Code)
 			if err != nil {
-				fmt.Println("Error fetching available companies:", err)
-				return
+				return fmt.Errorf("fetch company profile for %s: %w", sec.Code, err)
 			}
-			for _, symbol := range symbols {
-				fmt.Println(symbol)
-			}
-			return
-
-		} else {
-
-			companies, err := company.FetchAllAvailableCompanies()
-			if err != nil {
-				fmt.Println("Error fetching available companies:", err)
-				return
-			}
-
-			for _, name := range companies {
-				fmt.Println(name)
-			}
-		}
-	},
+			return output.JSON(cmd.OutOrStdout(), profile)
+		},
+	}
 }
 
-var showCompanyProfileCmd = &cobra.Command{
-	Use: "show-profile",
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
-		}
+// financialSections are the mutually exclusive section flags of show-financial.
+var financialSections = []string{"annual", "quarterly", "other", "banner-ad", "web-link", "req-financial"}
 
-		validList := getValidArgs()
-		input := args[0]
+func newCompanyFinancialCmd(a *app) *cobra.Command {
+	show := make(map[string]*bool, len(financialSections))
+	var companyBannerAd bool
 
-		for _, valid := range validList {
-			if input == valid {
-				return nil
+	cmd := &cobra.Command{
+		Use:     "show-financial <SYMBOL>",
+		Aliases: []string{"financials", "reports"},
+		Short:   "Show company financial reports (PDF links)",
+		Long: `Show the financial reports a company has filed with the CSE.
+
+Without a section flag every section is shown. Report entries include the
+report date, upload/authorisation times (Asia/Colombo) and the PDF URL.`,
+		Example:           "  hex company show-financial JKH\n  hex company show-financial JKH --quarterly",
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: a.completeSymbols,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if companyBannerAd {
+				*show["banner-ad"] = true
 			}
-		}
 
-		return fmt.Errorf("invalid company symbol %q. Use 'hex company list --onlySymbol' to see valid names", input)
-	},
-	ValidArgs: getValidArgs(),
-	Short:     "Show company profile",
-	Run: func(cmd *cobra.Command, args []string) {
-		companySymbol := args[0]
-		companyProfile, err := company.FetchCompanyProfileBySymbol(companySymbol)
-		if err != nil {
-			fmt.Println("Error fetching company profile:", err)
-			return
-		}
-
-		util.PrettyPrintJSON(companyProfile)
-	},
-}
-
-var showCompanyFinancialDataCmd = &cobra.Command{
-	Use: "show-financial",
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			return fmt.Errorf("accepts 1 arg(s), received %d", len(args))
-		}
-
-		validList := getValidArgs()
-		input := args[0]
-
-		for _, valid := range validList {
-			if input == valid {
-				return nil
+			sec, err := a.resolve(cmd, args[0])
+			if err != nil {
+				return err
 			}
-		}
+			f, err := a.cse.Financials(cmd.Context(), sec.Code)
+			if err != nil {
+				return fmt.Errorf("fetch financial data for %s: %w", sec.Code, err)
+			}
 
-		return fmt.Errorf("invalid company symbol %q. Use 'hex company list --onlySymbol' to see valid names", input)
-	},
-	ValidArgs: getValidArgs(),
-	Short:     "Show company financial data",
-	Run: func(cmd *cobra.Command, args []string) {
-		companySymbol := args[0]
-		companyFinancialData, err := company.FetchCompanyFinancialDataBySymbol(companySymbol)
-		if err != nil {
-			fmt.Println("Error fetching company financial data:", err)
-			return
-		}
-
-		var dataToShow interface{}
-
-		if showAnnualData {
-			var makeAnnualData = make([]customStructs.InfoAnnualData, len(companyFinancialData.InfoAnnualData))
-			for i, data := range companyFinancialData.InfoAnnualData {
-				makeAnnualData[i] = customStructs.InfoAnnualData{
-					ManualDate:     data.ManualDate,
-					UploadedDate:   data.UploadedDate,
-					FileText:       data.FileText,
-					AuthorizedDate: data.AuthorizedDate,
+			var data any
+			switch {
+			case *show["annual"]:
+				data = company.ReportViews(f.Annual)
+			case *show["quarterly"]:
+				data = company.ReportViews(f.Quarterly)
+			case *show["other"]:
+				data = company.ReportViews(f.Other)
+			case *show["banner-ad"]:
+				data = f.BannerAd
+			case *show["web-link"]:
+				data = f.WebLinks
+			case *show["req-financial"]:
+				data = f.Extra
+			default:
+				data = struct {
+					Symbol       string               `json:"symbol"`
+					Annual       []company.ReportView `json:"annual"`
+					Quarterly    []company.ReportView `json:"quarterly"`
+					Other        []company.ReportView `json:"other"`
+					WebLinks     []*string            `json:"webLinks"`
+					ReqFinancial []cse.ReqFinancial   `json:"reqFinancial"`
+					BannerAd     cse.Asset            `json:"bannerAd"`
+				}{
+					Symbol:       sec.Code,
+					Annual:       company.ReportViews(f.Annual),
+					Quarterly:    company.ReportViews(f.Quarterly),
+					Other:        company.ReportViews(f.Other),
+					WebLinks:     f.WebLinks,
+					ReqFinancial: f.Extra,
+					BannerAd:     f.BannerAd,
 				}
 			}
-			dataToShow = makeAnnualData
-		}
-		if showQuarterlyData {
-			var makeQuarterlyData = make([]customStructs.InfoQuarterlyData, len(companyFinancialData.InfoQuarterlyData))
-			for i, data := range companyFinancialData.InfoQuarterlyData {
-				makeQuarterlyData[i] = customStructs.InfoQuarterlyData{
-					ManualDate:     data.ManualDate,
-					UploadedDate:   data.UploadedDate,
-					FileText:       data.FileText,
-					AuthorizedDate: data.AuthorizedDate,
-				}
-			}
-			dataToShow = makeQuarterlyData
-		}
-		if showOtherData {
-			var makeOtherData = make([]customStructs.InfoOtherData, len(companyFinancialData.InfoOtherData))
-			for i, data := range companyFinancialData.InfoOtherData {
-				makeOtherData[i] = customStructs.InfoOtherData{
-					ManualDate:     data.ManualDate,
-					UploadedDate:   data.UploadedDate,
-					FileText:       data.FileText,
-					AuthorizedDate: data.AuthorizedDate,
-				}
-			}
-			dataToShow = makeOtherData
-		}
-		if showBannerAd {
-			dataToShow = companyFinancialData.InfoCompanyBannerAd
-		}
-		if showWebLink {
-			dataToShow = companyFinancialData.InfoWebLink
-		}
-		if showReqFinancial {
+			return output.JSON(cmd.OutOrStdout(), data)
+		},
+	}
 
-			dataToShow = companyFinancialData.ReqFinancial
-		}
-		if showCompanyBannerAd {
-			dataToShow = companyFinancialData.InfoCompanyBannerAd
-		}
-		if dataToShow == nil {
-			util.PrettyPrintJSON(companyFinancialData)
-
-		} else {
-			util.PrettyPrintJSON(dataToShow)
-		}
-
-	},
+	cmd.Flags().SetNormalizeFunc(legacyFlags(map[string]string{
+		"showAnnualData":    "annual",
+		"showQuarterlyData": "quarterly",
+		"showOtherData":     "other",
+		"showBannerAd":      "banner-ad",
+		"showWebLink":       "web-link",
+		"showReqFinancial":  "req-financial",
+	}))
+	usage := map[string][2]string{
+		"annual":        {"a", "Show only annual reports"},
+		"quarterly":     {"q", "Show only quarterly reports"},
+		"other":         {"o", "Show only other filings"},
+		"banner-ad":     {"b", "Show only the company banner ad"},
+		"web-link":      {"w", "Show only web links"},
+		"req-financial": {"r", "Show only extra financial data elements"},
+	}
+	for _, name := range financialSections {
+		show[name] = new(bool)
+		cmd.Flags().BoolVarP(show[name], name, usage[name][0], false, usage[name][1])
+	}
+	cmd.Flags().BoolVarP(&companyBannerAd, "showCompanyBannerAd", "c", false, "Show company banner ad")
+	_ = cmd.Flags().MarkDeprecated("showCompanyBannerAd", "use --banner-ad (-b); both print the same field")
+	cmd.MarkFlagsMutuallyExclusive(financialSections...)
+	return cmd
 }
 
-func init() {
-
-	listCmd.Flags().BoolVarP(&onlyNames, "onlyNames", "n", false, "Print only company names ")
-	listCmd.Flags().BoolVarP(&onlySymbol, "onlySymbol", "s", false, "Print only company symbol ")
-
-	showCompanyFinancialDataCmd.Flags().BoolVarP(&showAnnualData, "showAnnualData", "a", false, "Show annual data")
-	showCompanyFinancialDataCmd.Flags().BoolVarP(&showQuarterlyData, "showQuarterlyData", "q", false, "Show quarterly data")
-	showCompanyFinancialDataCmd.Flags().BoolVarP(&showOtherData, "showOtherData", "o", false, "Show other data")
-	showCompanyFinancialDataCmd.Flags().BoolVarP(&showBannerAd, "showBannerAd", "b", false, "Show banner ad")
-	showCompanyFinancialDataCmd.Flags().BoolVarP(&showWebLink, "showWebLink", "w", false, "Show web link")
-	showCompanyFinancialDataCmd.Flags().BoolVarP(&showReqFinancial, "showReqFinancial", "r", false, "Show req financial")
-	showCompanyFinancialDataCmd.Flags().BoolVarP(&showCompanyBannerAd, "showCompanyBannerAd", "c", false, "Show company banner ad")
-
-	rootCmd.AddCommand(companyCmd)
-	companyCmd.AddCommand(listCmd)
-	companyCmd.AddCommand(showCompanyProfileCmd)
-	companyCmd.AddCommand(showCompanyFinancialDataCmd)
+// resolve maps a user-typed symbol to a listed security with a helpful error.
+func (a *app) resolve(cmd *cobra.Command, input string) (cse.Security, error) {
+	sec, err := company.Resolve(cmd.Context(), a.cse, input)
+	if errors.Is(err, cse.ErrUnknownSymbol) {
+		return sec, fmt.Errorf("%w. Use 'hex company list --symbols' to see valid symbols", err)
+	}
+	return sec, err
 }
