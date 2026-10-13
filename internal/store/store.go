@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
@@ -153,4 +154,19 @@ func ptrFloat(v sql.NullFloat64) *float64 {
 	}
 	f := v.Float64
 	return &f
+}
+
+// RemoveFiles deletes the default database and its WAL files. Missing files
+// are not an error. The database must not be open.
+func RemoveFiles() error {
+	path, err := Path()
+	if err != nil {
+		return err
+	}
+	for _, p := range []string{path, path + "-wal", path + "-shm"} {
+		if err := os.Remove(p); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("remove %s: %w", filepath.Base(p), err)
+		}
+	}
+	return nil
 }

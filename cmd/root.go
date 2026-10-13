@@ -12,6 +12,7 @@ import (
 // app carries the dependencies commands share, so tests can inject fakes.
 type app struct {
 	cse *cse.Client
+	rps float64 // sync request rate; tests raise it
 }
 
 // NewRootCmd builds the hex command tree using the live cse.lk client.
@@ -20,6 +21,9 @@ func NewRootCmd() *cobra.Command {
 }
 
 func newRootCmd(a *app) *cobra.Command {
+	if a.rps == 0 {
+		a.rps = defaultRPS
+	}
 	root := &cobra.Command{
 		Use:           "hex",
 		Short:         "Analyze companies on the Sri Lanka stock market",
@@ -30,6 +34,7 @@ func newRootCmd(a *app) *cobra.Command {
 	root.AddCommand(
 		newCompanyCmd(a),
 		newCalcCmd(),
+		newSyncCmd(a),
 		newCleanCmd(),
 		newVersionCmd(),
 	)

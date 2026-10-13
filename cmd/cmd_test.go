@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/Janindu-Pathirana/hex/internal/cache"
+	"github.com/Janindu-Pathirana/hex/internal/cse"
 	"github.com/Janindu-Pathirana/hex/internal/csetest"
+	"github.com/Janindu-Pathirana/hex/internal/store"
 )
 
 var update = flag.Bool("update", false, "update golden files")
@@ -18,10 +20,17 @@ var update = flag.Bool("update", false, "update golden files")
 func run(t *testing.T, args ...string) (out string, srv *csetest.Server, err error) {
 	t.Helper()
 	t.Setenv(cache.EnvDir, t.TempDir())
+	t.Setenv(store.EnvDir, t.TempDir())
 	srv, client := csetest.New(t)
+	return runWith(t, srv, client, args...)
+}
 
+// runWith executes hex against an existing fake server and environment, so a
+// test can run several commands against the same database.
+func runWith(t *testing.T, srv *csetest.Server, client *cse.Client, args ...string) (out string, _ *csetest.Server, err error) {
+	t.Helper()
 	var buf bytes.Buffer
-	root := newRootCmd(&app{cse: client})
+	root := newRootCmd(&app{cse: client, rps: 1000})
 	root.SetOut(&buf)
 	root.SetErr(&buf)
 	root.SetArgs(args)

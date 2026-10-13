@@ -16,15 +16,27 @@ import (
 	"github.com/Janindu-Pathirana/hex/internal/cse"
 )
 
-// Server is a fake cse.lk. Requests records every request it served. Mux can
-// be used to add or override routes before the first request.
+// Server is a fake cse.lk. Hits counts every request it served. Mux can be
+// used to add routes and Override to replace one.
 type Server struct {
 	*httptest.Server
 	Mux  *http.ServeMux
 	Hits atomic.Int32
 
-	mu    sync.Mutex
-	forms []map[string]string
+	mu        sync.Mutex
+	forms     []map[string]string
+	overrides map[string]http.HandlerFunc
+}
+
+// Override serves every request for path (e.g. "/api/companyInfoSummery")
+// with h instead of the fixture route.
+func (s *Server) Override(path string, h http.HandlerFunc) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.overrides == nil {
+		s.overrides = map[string]http.HandlerFunc{}
+	}
+	s.overrides[path] = h
 }
 
 // Forms returns the endpoint path and "symbol" form value of each request.
@@ -125,7 +137,12 @@ func New(t testing.TB) (*Server, *cse.Client) {
 		_ = r.ParseForm()
 		s.mu.Lock()
 		s.forms = append(s.forms, map[string]string{"path": r.URL.Path, "symbol": r.FormValue("symbol")})
+		h := s.overrides[r.URL.Path]
 		s.mu.Unlock()
+		if h != nil {
+			h(w, r)
+			return
+		}
 		mux.ServeHTTP(w, r)
 	}))
 	t.Cleanup(s.Close)

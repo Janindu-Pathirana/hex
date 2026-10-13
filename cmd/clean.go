@@ -5,6 +5,7 @@ import (
 
 	"github.com/Janindu-Pathirana/hex/internal"
 	"github.com/Janindu-Pathirana/hex/internal/cache"
+	"github.com/Janindu-Pathirana/hex/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -37,6 +38,36 @@ func newCleanCmd() *cobra.Command {
 					return fmt.Errorf("clean securities cache: %w", err)
 				}
 				_, err := fmt.Fprintln(cmd.OutOrStdout(), "Securities cache cleaned successfully")
+				return err
+			},
+		},
+		&cobra.Command{
+			Use:   "db",
+			Short: "Delete the local database (everything 'hex sync' stored, including manual values)",
+			Args:  cobra.NoArgs,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				if err := store.RemoveFiles(); err != nil {
+					return fmt.Errorf("clean database: %w", err)
+				}
+				_, err := fmt.Fprintln(cmd.OutOrStdout(), "Database deleted")
+				return err
+			},
+		},
+		&cobra.Command{
+			Use:   "raw",
+			Short: "Delete the raw cse.lk responses kept in the database",
+			Args:  cobra.NoArgs,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				db, err := store.OpenDefault(cmd.Context())
+				if err != nil {
+					return err
+				}
+				defer db.Close()
+				n, err := db.ClearRaw(cmd.Context())
+				if err != nil {
+					return err
+				}
+				_, err = fmt.Fprintf(cmd.OutOrStdout(), "Deleted %d raw responses\n", n)
 				return err
 			},
 		},
