@@ -13,7 +13,9 @@ import (
 	"github.com/Janindu-Pathirana/hex/cmd/company"
 	"github.com/Janindu-Pathirana/hex/internal/engine"
 	"github.com/Janindu-Pathirana/hex/internal/output"
+	"github.com/Janindu-Pathirana/hex/internal/pdfx"
 	"github.com/Janindu-Pathirana/hex/internal/sources/csejobs"
+	"github.com/Janindu-Pathirana/hex/internal/sources/reportjobs"
 	"github.com/Janindu-Pathirana/hex/internal/store"
 	"github.com/spf13/cobra"
 )
@@ -22,7 +24,7 @@ import (
 const defaultRPS = 5
 
 // syncGroups are the data groups "hex sync" accepts, in help order.
-var syncGroups = []string{"market", "securities", "quotes", "info", "history", "profiles", "reports", "actions", "all"}
+var syncGroups = []string{"market", "securities", "quotes", "info", "history", "profiles", "reports", "actions", "pdfs", "all"}
 
 type syncOptions struct {
 	symbols     []string
@@ -30,6 +32,13 @@ type syncOptions struct {
 	force       bool
 	dryRun      bool
 	concurrency int
+	reports     reportjobs.Options
+}
+
+// syncPlan is what a sync covers: the cse groups plus the report pipeline.
+type syncPlan struct {
+	cse  csejobs.Scope
+	pdfs bool
 }
 
 func newSyncCmd(a *app) *cobra.Command {
@@ -42,8 +51,9 @@ func newSyncCmd(a *app) *cobra.Command {
 Groups: market (status, indices, sectors, daily stats), securities (symbol
 list), quotes (today's prices), and per company: info (stockId, ranges,
 beta), history (daily bars, accumulated beyond one year), profiles,
-reports (PDF catalogue). actions stores recent corporate announcements.
-"all" selects every group.
+reports (PDF catalogue) and pdfs (download the newest reports and store
+their text). actions stores recent corporate announcements. "all" selects
+every group.
 
 With no group, hex syncs market, securities and quotes, plus info, history,
 profiles and reports for any --symbols. Work done within its freshness
@@ -66,6 +76,10 @@ where it stopped. Requests are rate-limited and run at most 4 at a time.`,
 	f.BoolVarP(&o.force, "force", "f", false, "Ignore freshness and fetch everything again")
 	f.BoolVar(&o.dryRun, "dry-run", false, "Show which jobs would run without fetching")
 	f.IntVarP(&o.concurrency, "concurrency", "c", engine.MaxConcurrency, "Jobs to run at once (max 4)")
+	o.reports = reportjobs.DefaultOptions
+	f.IntVar(&o.reports.Quarterly, "quarterly-reports", o.reports.Quarterly, "Newest interim reports per company for pdfs")
+	f.IntVar(&o.reports.Annual, "annual-reports", o.reports.Annual, "Newest annual reports per company for pdfs (large files)")
+	f.BoolVar(&o.reports.Reparse, "reparse", false, "Re-extract already processed reports from the cached PDFs")
 	cmd.MarkFlagsMutuallyExclusive("symbols", "all-symbols")
 	_ = cmd.RegisterFlagCompletionFunc("symbols", a.completeSymbols)
 
@@ -73,17 +87,29 @@ where it stopped. Requests are rate-limited and run at most 4 at a time.`,
 	return cmd
 }
 
-// syncScope turns the group arguments into a scope.
-func syncScope(groups []string, haveSymbols bool) csejobs.Scope {
+// syncScope turns the group arguments into a plan.
+func syncScope(groups []string, haveSymbols bool) syncPlan {
 	if len(groups) == 0 {
-		return csejobs.Scope{Market: true, Securities: true, Quotes: true,
-			Info: haveSymbols, History: haveSymbols, Profiles: haveSymbols, Reports: haveSymbols}
+		return syncPlan{cse: csejobs.Scope{Market: true, Securities: true, Quotes: true,
+			Info: haveSymbols, History: haveSymbols, Profiles: haveSymbols, Reports: haveSymbols}}
 	}
 	has := func(g string) bool { return slices.Contains(groups, g) || slices.Contains(groups, "all") }
-	return csejobs.Scope{
-		Market: has("market"), Securities: has("securities"), Quotes: has("quotes"), Info: has("info"),
-		History: has("history"), Profiles: has("profiles"), Reports: has("reports"), Actions: has("actions"),
+	p := syncPlan{
+		cse: csejobs.Scope{
+			Market: has("market"), Securities: has("securities"), Quotes: has("quotes"), Info: has("info"),
+			History: has("history"), Profiles: has("profiles"), Reports: has("reports"), Actions: has("actions"),
+		},
+		pdfs: has("pdfs"),
 	}
+	if p.pdfs {
+		p.cse.Reports = true // the catalogue says which PDFs exist
+	}
+	return p
+}
+
+func (p syncPlan) perCompany() bool {
+	s := p.cse
+	return s.Info || s.History || s.Profiles || s.Reports || p.pdfs
 }
 
 func (a *app) runSync(cmd *cobra.Command, groups []string, o syncOptions) error {
@@ -92,13 +118,12 @@ func (a *app) runSync(cmd *cobra.Command, groups []string, o syncOptions) error 
 	if err != nil {
 		return err
 	}
-	scope := syncScope(groups, len(codes) > 0)
-	perCompany := scope.Info || scope.History || scope.Profiles || scope.Reports
-	if perCompany && len(codes) == 0 {
+	plan := syncScope(groups, len(codes) > 0)
+	if plan.perCompany() && len(codes) == 0 {
 		return errors.New("per-company groups need --symbols or --all-symbols")
 	}
-	if scope.Actions {
-		scope.Securities = true // matching announcements needs the symbol list
+	if plan.cse.Actions {
+		plan.cse.Securities = true // matching announcements needs the symbol list
 	}
 
 	dir, err := store.Dir()
@@ -127,7 +152,19 @@ func (a *app) runSync(cmd *cobra.Command, groups []string, o syncOptions) error 
 	}
 
 	start := time.Now()
-	stages := csejobs.Plan(scope, codes, start)
+	stages := csejobs.Plan(plan.cse, codes, start)
+	if plan.pdfs {
+		blobs, err := pdfx.OpenBlobs()
+		if err != nil {
+			return err
+		}
+		env.Files = blobs
+		var st engine.Stage
+		for _, code := range codes {
+			st = append(st, reportjobs.PDFs(code, o.reports))
+		}
+		stages = append(stages, st)
+	}
 	sum, runErr := engine.Run(ctx, env, stages, engine.Options{Concurrency: o.concurrency, Force: o.force, DryRun: o.dryRun})
 
 	w := cmd.OutOrStdout()

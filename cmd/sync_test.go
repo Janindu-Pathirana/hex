@@ -18,7 +18,7 @@ func TestSyncThenStatus(t *testing.T) {
 	t.Setenv(store.EnvDir, t.TempDir())
 	srv, client := csetest.New(t)
 
-	out, _, err := runWith(t, srv, client, "sync", "all", "--symbols", "jkh,COMB")
+	out, _, err := runWith(t, srv, client, "sync", "market", "securities", "quotes", "info", "history", "profiles", "reports", "actions", "--symbols", "jkh,COMB")
 	if err != nil {
 		t.Fatalf("sync: %v\n%s", err, out)
 	}
@@ -30,7 +30,7 @@ func TestSyncThenStatus(t *testing.T) {
 	}
 
 	before := srv.Hits.Load()
-	out, _, err = runWith(t, srv, client, "sync", "all", "--symbols", "jkh,COMB")
+	out, _, err = runWith(t, srv, client, "sync", "market", "securities", "quotes", "info", "history", "profiles", "reports", "actions", "--symbols", "jkh,COMB")
 	if err != nil || !strings.Contains(out, "0 ok, 12 fresh") {
 		t.Fatalf("second sync: %v\n%s", err, out)
 	}
@@ -126,5 +126,16 @@ func TestCleanDB(t *testing.T) {
 	}
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Fatalf("database still exists: %v", err)
+	}
+}
+
+func TestSyncPDFsPlansCatalogueFirst(t *testing.T) {
+	out, _, err := run(t, "sync", "pdfs", "--symbols", "JKH", "--dry-run")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// reports:JKH (catalogue) and pdfs:JKH.
+	if !strings.Contains(out, "reports:JKH.N0000 would run") || !strings.Contains(out, "pdfs:JKH.N0000 would run") {
+		t.Fatalf("unexpected plan:\n%s", out)
 	}
 }

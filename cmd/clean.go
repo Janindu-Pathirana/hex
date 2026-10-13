@@ -42,6 +42,18 @@ func newCleanCmd() *cobra.Command {
 			},
 		},
 		&cobra.Command{
+			Use:   "pdf",
+			Short: "Delete downloaded report PDFs (extracted text stays in the database)",
+			Args:  cobra.NoArgs,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				if err := cache.Remove(internal.PDFCache); err != nil {
+					return fmt.Errorf("clean pdf cache: %w", err)
+				}
+				_, err := fmt.Fprintln(cmd.OutOrStdout(), "PDF cache cleaned successfully")
+				return err
+			},
+		},
+		&cobra.Command{
 			Use:   "db",
 			Short: "Delete the local database (everything 'hex sync' stored, including manual values)",
 			Args:  cobra.NoArgs,

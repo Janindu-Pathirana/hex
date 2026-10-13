@@ -101,11 +101,18 @@ func Save(cfg internal.CacheConfig, v any) error {
 	return nil
 }
 
-// Remove deletes the cache file for cfg. A missing file is not an error.
+// Remove deletes the cache file (or directory) for cfg. A missing file is not
+// an error.
 func Remove(cfg internal.CacheConfig) error {
 	path, err := Path(cfg)
 	if err != nil {
 		return err
+	}
+	if cfg.Dir {
+		if err := os.RemoveAll(path); err != nil {
+			return fmt.Errorf("remove cache %s: %w", cfg.CacheFile, err)
+		}
+		return nil
 	}
 	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("remove cache %s: %w", cfg.CacheFile, err)
