@@ -1,0 +1,74 @@
+{
+ "infoAnnualData": [
+  {
+   "id": 50738,
+   "path": "cmt/upload_report_file/369_1773048532050.pdf",
+   "manualDate": 1767119400000,
+   "uploadedDate": 1773048532050,
+   "fileText": "Annual Report as at 31st December 2025",
+   "path2": null,
+   "authorizedDate": 1773051442930
+  },
+  {
+   "id": 47609,
+   "path": "cmt/upload_report_file/369_1741169817422.pdf",
+   "manualDate": 1735583400000,
+   "uploadedDate": 1741169817422,
+   "fileText": "Commercial Bank of Ceylon PLC - Annual Report 2024",
+   "path2": "cmt/upload_report_file/369_1741169817422.",
+   "authorizedDate": null
+  }
+ ],
+ "infoQuarterlyData": [
+  {
+   "id": 52504,
+   "path": "cmt/upload_report_file/369_1786618965674.pdf",
+   "manualDate": 1782757800000,
+   "uploadedDate": 1786618965674,
+   "fileText": "Interim Financial Statements for the Quarter ended 30th June 2026",
+   "path2": null,
+   "authorizedDate": 1786620862357
+  },
+  {
+   "id": 51101,
+   "path": "cmt/upload_report_file/369_1778755847521.pdf",
+   "manualDate": 1774895400000,
+   "uploadedDate": 1778755847521,
+   "fileText": "Interim Financial Statements for the Quarter ended 31st March 2026",
+   "path2": null,
+   "authorizedDate": 1778757209506
+  },
+  {
+   "id": 50613,
+   "path": "cmt/upload_report_file/369_1772101323577..pdf",
+   "manualDate": 1767119400000,
+   "uploadedDate": 1772101323577,
+   "fileText": "Interim Financial Statements for the Quarter ended 31st December 2025",
+   "path2": null,
+   "authorizedDate": 1772108431768
+  }
+ ],
+ "infoWebLink": [],
+ "infoOtherData": [
+  {
+   "id": 52296,
+   "path": "cmt/upload_report_file/369_1786111976774.pdf",
+   "manualDate": 1786041000000,
+   "uploadedDate": 1786111976774,
+   "fileText": "Accountants' Report & Five Year Summary",
+   "path2": null,
+   "authorizedDate": 1786112417698
+  }
+ ],
+ "reqFinancial": [
+  {
+   "secId": 369,
+   "elmId": "1",
+   "data": "Financial Statements Summary"
+  }
+ ],
+ "infoCompanyBannerAd": {
+  "id": 260,
+  "path": "upload_add/390.jpeg"
+ }
+}

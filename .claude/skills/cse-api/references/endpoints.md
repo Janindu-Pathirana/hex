@@ -33,7 +33,7 @@ This is the best single source for a screener: one call returns all securities.
 ### `allSectors` → `[...]`
 `id, sectorId, symbol (e.g. EGY), indexCode, indexCodeSp (e.g. SPCSEEIP), indexName ("S&P/CSE Energy Industry Group Index"), name, indexValue, change, percentage, sectorTradeToday, sectorVolumeToday, sectorTurnoverToday, sectorPreviousClose, transactionTime (ms)`
 
-### `dailyMarketSummery` → `[[...]]` (note the nested array)
+### `dailyMarketSummery` → `[[...], [...]]` (note the nested arrays: one single-element array per day; 2 days seen on 2026-10-13, newest first)
 `id, tradeDate (ms), marketTurnover, marketTrades, marketDomestic, marketForeign, equityTurnover, equityDomesticPurchase, equityDomesticSales, equityForeignPurchase, equityForeignSales, volumeOfTurnOverNumber, volumeOfTurnoverDomestic, volumeOfTurnoverForeign, tradesNo, tradesNoDomestic, tradesNoForeign, listedCompanyNumber, tradeCompanyNumber, marketCap, cdsHoldings{Total,Domestic,Foreign}, cdsMarketValue{Total,Domestic,Foreign}, corporateDebtValue, governmentDebtValue, triasi, spt, pbv, dy, per, spp, trimpi?, mpi?, asi`
 - `per` / `pbv` / `dy` are market-wide P/E, P/BV and dividend yield, a useful benchmark for company ratios.
 - Foreign net flow = `equityForeignPurchase - equityForeignSales`.
@@ -59,14 +59,19 @@ Mapped in `internal/cse/company.go` (`CompanyProfile`): directors, `reqComSumInf
 
 ### `financials` (param `symbol`)
 Mapped in `internal/cse/company.go` (`Financials`, `Report`): `infoAnnualData`, `infoQuarterlyData`, `infoOtherData`, each with `path` → PDF at `https://cdn.cse.lk/<path>` (verified), `fileText` (e.g. "Annual Report as at 31st March 2026"), `manualDate`/`uploadedDate`/`authorizedDate` (ms).
+- `reqFinancial` (`secId, elmId, data`) only ever held `elmId "1"` / `"Financial Statements Summary"` placeholders (COMB, 159 rows, 2026-10-13). There are no numbers in it.
+- `path` may contain a double dot (`369_1772101323577..pdf`). Use it verbatim.
 
 ## Announcements
 
 ### `approvedAnnouncement` → `{"approvedAnnouncements": [...]}`
 `id, createdDate (ms), dateOfAnnouncement ("12 Oct 2026"), announcementId, announcementCategory, company, type?, symbol?, recordDate?, allotment?, xr?, xc?, xd?, tradingCommencement?, tradingSuspended?, paymentDate?, agmDate?, dateOfAgmInitial?, logoUrl, remarks`
+- Re-checked 2026-10-13: only about the last 60 announcements. `symbol` and every date field (`xd`, `paymentDate`…) came back `null` even for `CASH DIVIDEND`, so match on the `company` name (it equals the symbol-list name) and treat the category as the action kind. The per-announcement detail endpoint is **unverified**.
+- Categories seen: `CASH DIVIDEND`, `RIGHTS ISSUE`, `RIGHTS ISSUE (DATES)`, `DEBENTURE ISSUE`, `CORPORATE DISCLOSURE`, `DEALINGS BY DIRECTORS`, `ANNUAL GENERAL MEETING - APPROVED`, `ERRATA TO THE FINANCIAL STATEMENT`, `NOTIFICATION ON THE LISTING OF SHARES`, `WATCH LIST - TRANSFERRED OUT`, director/CEO appointments and resignations.
 
 ### `getFinancialAnnouncement` → `{"reqFinancialAnnouncemnets": [...]}`
-`id, path, manualDate (ms), uploadedDate (string "12 Oct 2026 06:05:35 PM"), fileText, name, symbol (short, e.g. ASPH), logoUrl`
+`id, path, manualDate (ms), uploadedDate (string "12 Oct 2026 06:05:35 PM"), fileText, name, symbol (short, e.g. ASPH), logoUrl, authorizedDate (string, same format)`
+Note that the dates here are **strings**, unlike `financials`, where they are ms.
 
 ## Static
 

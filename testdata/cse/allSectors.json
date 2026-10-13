@@ -1,0 +1,53 @@
+[
+ {
+  "id": 105737,
+  "sectorId": 223,
+  "symbol": "EGY",
+  "indexCode": "1010",
+  "indexCodeSp": "SPCSEEIP",
+  "indexName": "S&P/CSE Energy Industry Group Index",
+  "name": "Energy",
+  "indexValue": 2579.98,
+  "change": -18.55,
+  "percentage": -0.7138651468330172,
+  "sectorTradeToday": 182.0,
+  "sectorVolumeToday": 355531,
+  "sectorTurnoverToday": 42258589.65,
+  "sectorPreviousClose": 2598.53,
+  "transactionTime": 1791882000281
+ },
+ {
+  "id": 105729,
+  "sectorId": 224,
+  "symbol": "MAT",
+  "indexCode": "1510",
+  "indexCodeSp": "SPCSEMIP",
+  "indexName": "S&P/CSE Materials Industry Group Index",
+  "name": "Materials",
+  "indexValue": 2936.47,
+  "change": -19.88,
+  "percentage": -0.6724508261876977,
+  "sectorTradeToday": 2443.0,
+  "sectorVolumeToday": 6607559,
+  "sectorTurnoverToday": 86548037.5,
+  "sectorPreviousClose": 2956.35,
+  "transactionTime": 1791882000410
+ },
+ {
+  "id": 105726,
+  "sectorId": 225,
+  "symbol": "CG",
+  "indexCode": "2010",
+  "indexCodeSp": "SPCSECGP",
+  "indexName": "S&P/CSE Capital Goods Industry Group Index",
+  "name": "Capital Goods",
+  "indexValue": 2132.69,
+  "change": -27.19,
+  "percentage": -1.258866233309258,
+  "sectorTradeToday": 2957.0,
+  "sectorVolumeToday": 7262012,
+  "sectorTurnoverToday": 224064359.25,
+  "sectorPreviousClose": 2159.88,
+  "transactionTime": 1791881992969
+ }
+]
