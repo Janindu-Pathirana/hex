@@ -1,0 +1,15 @@
+Return on equity (ROE)
+Formula: net profit ÷ average equity attributable to parent
+
+Inputs
+  Net profit attributable to parent (LKR)               1,200
+  Equity attributable to parent, end of period (LKR)    11,000
+  Equity attributable to parent, start of period (LKR)  9,000
+
+Steps
+  average equity = (9,000 + 11,000) ÷ 2 = 10,000
+  ROE = 1,200 ÷ 10,000 = 12.00%
+
+Result: 12.00%
+
+For information only, not investment advice.

@@ -19,6 +19,8 @@ go build -ldflags "-X github.com/Janindu-Pathirana/hex/cmd.Version=0.1.0" -o hex
 | `main.go` | Calls `cmd.Execute()`; embeds tzdata |
 | `cmd/root.go` | `NewRootCmd()` builds the tree; `app` holds injectable deps (the CSE client) |
 | `cmd/<group>.go` | Cobra wiring for a group: `new<Group>Cmd(a *app)` constructors, flags (`company.go`, `clean.go`, `version.go`) |
+| `cmd/calc.go` | `hex calc <ratio>`: one subcommand generated per `analysis.Registry` entry, `hex calc list` |
+| `internal/analysis/` | Pure ratio engine: `Registry` of `Ratio{Inputs, Formula, Compute}` returning `Result{Value, Display, Steps}` |
 | `cmd/args.go` | Shared symbol completion (`ValidArgsFunction`) and legacy flag-name normalisation |
 | `cmd/<group>/` | Logic for that group (`cmd/company/`: cached securities, symbol resolution, report views) |
 | `internal/cse/` | cse.lk client: `Client{BaseURL, SiteURL, HTTP}`, `post`/`get` with retries, `ErrNoData`, `ErrUnknownSymbol`, `Resolve`, response types |

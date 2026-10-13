@@ -155,3 +155,43 @@ func TestCompletionFiltersByPrefix(t *testing.T) {
 		t.Fatalf("unexpected completion output:\n%s", out)
 	}
 }
+
+func TestCalcROE(t *testing.T) {
+	out, srv, err := run(t, "calc", "roe", "--net-profit", "1200", "--equity-open", "9000", "--equity-close", "11000")
+	if err != nil {
+		t.Fatal(err)
+	}
+	golden(t, "calc-roe", out)
+	if n := srv.Hits.Load(); n != 0 {
+		t.Fatalf("calc made %d requests, want 0", n)
+	}
+}
+
+func TestCalcMissingInput(t *testing.T) {
+	_, _, err := run(t, "calc", "roe", "--net-profit", "1200")
+	if err == nil || !strings.Contains(err.Error(), "--equity-close") {
+		t.Fatalf("got %v, want missing --equity-close", err)
+	}
+}
+
+func TestCalcJSON(t *testing.T) {
+	out, _, err := run(t, "calc", "pe", "--price", "100", "--eps", "12.5", "--json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, `"value": 8`) || !strings.Contains(out, `"display": "8.00x"`) {
+		t.Fatalf("unexpected json:\n%s", out)
+	}
+}
+
+func TestCalcListCoversRegistry(t *testing.T) {
+	out, _, err := run(t, "calc", "list")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{"roe", "net-margin", "pe", "dividend-yield", "growth"} {
+		if !strings.Contains(out, "\n"+id+" ") {
+			t.Errorf("calc list missing %s:\n%s", id, out)
+		}
+	}
+}
