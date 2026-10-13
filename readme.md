@@ -55,6 +55,8 @@ hex version
 
 ## Usage
 
+See [FEATURES.md](FEATURES.md) for the full feature reference.
+
 ```bash
 hex company list                      # NAME,CODE for every listed security (N, X and U series)
 hex company list --symbols            # unique tickers
