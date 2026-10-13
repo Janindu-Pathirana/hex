@@ -25,6 +25,9 @@ var (
 	inDPS             = Input{"dps", "dps", "Dividends per share, last 12 months (LKR)"}
 	inNAV             = Input{"nav_per_share", "nav", "Net assets (book value) per share (LKR)"}
 	inEPSGrowth       = Input{"eps_growth", "eps-growth", "EPS growth, % per year (e.g. 15 for 15%)"}
+	inOCF             = Input{"ocf", "ocf", "Net cash from operating activities (LKR)"}
+	inCapex           = Input{"capex", "capex", "Capital expenditure, as a positive amount (LKR)"}
+	inFinanceCost     = Input{"finance_cost", "finance-cost", "Finance cost, as a positive amount (LKR)"}
 	inCurrent         = Input{"current", "current", "Value this period"}
 	inPrevious        = Input{"previous", "previous", "Value same period last year"}
 )
@@ -185,6 +188,34 @@ var Registry = []Ratio{
 		Inputs:  []Input{inCurAssets, inCurLiabilities},
 		Compute: func(in Values) Result {
 			return divide("current ratio", in["current_assets"], in["current_liabilities"], Times, "current liabilities must be positive")
+		},
+	},
+
+	{
+		ID: "interest-cover", Name: "Interest cover", Group: "health", Unit: Times, SkipFinancials: true,
+		Formula: "operating profit ÷ finance cost",
+		Inputs:  []Input{inOperatingProfit, inFinanceCost},
+		Compute: func(in Values) Result {
+			return divide("interest cover", in["operating_profit"], in["finance_cost"], Times, "finance cost must be positive")
+		},
+	},
+
+	// Cash flow
+	{
+		ID: "cash-conversion", Name: "Cash conversion", Group: "cashflow", Unit: Times,
+		Formula: "operating cash flow ÷ net profit attributable to parent",
+		Inputs:  []Input{inOCF, inNetProfit},
+		Compute: func(in Values) Result {
+			return divide("cash conversion", in["ocf"], in["net_profit"], Times, "net profit is zero or negative, so cash conversion is not meaningful")
+		},
+	},
+	{
+		ID: "fcf", Name: "Free cash flow", Group: "cashflow", Unit: LKR,
+		Formula: "operating cash flow − capital expenditure",
+		Inputs:  []Input{inOCF, inCapex},
+		Compute: func(in Values) Result {
+			v := in["ocf"] - in["capex"]
+			return ok(v, LKR, fmt.Sprintf("free cash flow = %s − %s = %s", Num(in["ocf"]), Num(in["capex"]), Num(v)))
 		},
 	},
 
