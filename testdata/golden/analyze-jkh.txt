@@ -1,0 +1,60 @@
+JKH.N0000  John Keells Holdings PLC
+price 60 · as of 2026-01-15
+
+Valuation
+  Market capitalisation       6,000   
+  Earnings per share (EPS)    12      TTM to 2025-12-31
+  Price to earnings (P/E)     5.00x   
+  Earnings yield              20.00%  
+  Book value (NAV) per share  12      at 2025-12-31
+  Price to book (P/B)         5.00x   
+  Graham number               56.92   
+  PEG ratio                   0.18x   
+
+Profitability
+  Return on equity (ROE)   10.91%  TTM to 2025-12-31
+  Return on assets (ROA)   4.36%   TTM to 2025-12-31
+  Gross profit margin      -       missing: Gross profit (LKR)
+  Operating profit margin  -       missing: Operating profit (LKR)
+  Net profit margin        10.91%  TTM to 2025-12-31
+
+Growth
+  Revenue growth  14.29%  9M to 2025-12-31 vs 2024-12-31
+  Profit growth   28.57%  9M to 2025-12-31 vs 2024-12-31
+  EPS growth      28.57%  9M to 2025-12-31 vs 2024-12-31
+
+Financial health
+  Current ratio   -  missing: Current assets (LKR); Current liabilities (LKR)
+  Debt to equity  -  missing: Interest-bearing debt (LKR); Total equity (LKR)
+  Interest cover  -  missing: Operating profit (LKR); Finance cost, as a positive amount (LKR)
+
+Cash flow
+  Cash conversion  -  missing: Net cash from operating activities (LKR)
+  Free cash flow   -  missing: Net cash from operating activities (LKR); Capital expenditure, as a positive amount (LKR)
+
+Dividends
+  Dividend yield         -  missing: Dividends per share, last 12 months (LKR)
+  Dividend payout ratio  -  missing: Dividends per share, last 12 months (LKR)
+
+Findings
+  [watch] valuation: High price to book. P/B of 5.00x is above 3x (absolute threshold; no sector benchmark yet).
+  [watch] valuation: Price above the Graham number. Price 60 is above the Graham number 56.92.
+  [positive] valuation: Low earnings multiple. P/E of 5.0x is below 8x (absolute threshold; no sector benchmark yet).
+  [positive] profitability: Margins widening. Profit grew 28.6% against revenue growth of 14.3%.
+  [positive] growth: Revenue growing. Revenue grew 14.3% year on year.
+  [positive] growth: Profit growing. Profit grew 28.6% year on year.
+  [neutral] profitability: Moderate return on equity. ROE of 10.9%.
+
+Coverage: 5 stored fields used
+Not computed:
+  cash-conversion: missing: Net cash from operating activities (LKR)
+  current-ratio: missing: Current assets (LKR); Current liabilities (LKR)
+  debt-equity: missing: Interest-bearing debt (LKR); Total equity (LKR)
+  dividend-yield: missing: Dividends per share, last 12 months (LKR)
+  fcf: missing: Net cash from operating activities (LKR); Capital expenditure, as a positive amount (LKR)
+  gross-margin: missing: Gross profit (LKR)
+  interest-cover: missing: Operating profit (LKR); Finance cost, as a positive amount (LKR)
+  operating-margin: missing: Operating profit (LKR)
+  payout: missing: Dividends per share, last 12 months (LKR)
+
+Data: cse.lk, may be delayed. Figures read from report PDFs should be checked against the report. For information only, not investment advice.

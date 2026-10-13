@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/Janindu-Pathirana/hex/internal/cse"
 	"github.com/anthropics/anthropic-sdk-go/option"
@@ -15,6 +16,7 @@ type app struct {
 	cse     *cse.Client
 	rps     float64                // sync request rate; tests raise it
 	llmOpts []option.RequestOption // Anthropic client options; tests point it at a fake
+	now     func() time.Time       // clock; tests fix it
 }
 
 // NewRootCmd builds the hex command tree using the live cse.lk client.
@@ -23,6 +25,9 @@ func NewRootCmd() *cobra.Command {
 }
 
 func newRootCmd(a *app) *cobra.Command {
+	if a.now == nil {
+		a.now = time.Now
+	}
 	if a.rps == 0 {
 		a.rps = defaultRPS
 	}
@@ -36,6 +41,7 @@ func newRootCmd(a *app) *cobra.Command {
 	root.AddCommand(
 		newCompanyCmd(a),
 		newCalcCmd(),
+		newAnalyzeCmd(a),
 		newSyncCmd(a),
 		newReportsCmd(a),
 		newFundamentalsCmd(a),
