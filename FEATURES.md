@@ -2,7 +2,7 @@
 
 A quick reference to what `hex` can do today. For build and install steps, see [readme.md](readme.md).
 
-`hex` is a Go command-line tool that pulls data from the Colombo Stock Exchange website (cse.lk). It is at **Phase 0 (foundation)**: it lists companies and fetches company profiles and financial-report links. The analysis features are planned (see [Roadmap](#roadmap)).
+`hex` is a Go command-line tool that pulls data from the Colombo Stock Exchange website (cse.lk). It lists companies and, with its **scrape engine** (`hex sync`), stores market data, quotes, company detail, price history, profiles, report catalogues and announcements in a local database, and reads income statement, balance sheet and cash flow figures out of the report PDFs. Analysis features on top of that data are planned (see [Roadmap](#roadmap)).
 
 > Analysis output is informational only and is not investment advice.
 
@@ -13,8 +13,10 @@ A quick reference to what `hex` can do today. For build and install steps, see [
 | [List companies](#list-companies) | `hex company list` | Every listed security, or only names or tickers |
 | [Company profile](#company-profile) | `hex company show-profile <SYMBOL>` | Company info, directors, summaries, as JSON |
 | [Financial reports](#financial-reports) | `hex company show-financial <SYMBOL>` | Annual/quarterly/other report PDF links |
+| [Scrape engine](#scrape-engine) | `hex sync [group...]`, `hex sync status` | Incremental, resumable, rate-limited |
+| [Report fundamentals](#report-fundamentals) | `hex sync fundamentals`, `hex reports`, `hex fundamentals` | Figures read from PDFs, with confidence; manual overrides |
 | [Symbol resolution](#symbol-resolution) | any `<SYMBOL>` argument | `jkh`, `JKH`, `CIC.X0000` |
-| [Caching](#caching) | `hex clean all`, `hex clean securities` | Symbol list cached for 24h |
+| [Caching](#caching) | `hex clean all`, `hex clean securities`, `hex clean pdf`, `hex clean db`, `hex clean raw` | Symbol list 24h, PDFs by hash, database kept by `clean all` |
 | [Reliable networking](#networking-and-reliability) | all commands | Retries, 30s timeout, Ctrl-C cancels |
 | [Shell completion](#cli-experience) | `hex completion <shell>` | Completes ticker symbols |
 | [Version](#cli-experience) | `hex version` | Version set at build time |
@@ -94,12 +96,14 @@ Every `<SYMBOL>` argument goes through the same resolver:
 | Cache | File | TTL | Clear with |
 |---|---|---|---|
 | Securities (symbol list) | `securities.json` | 24h | `hex clean securities` (alias `available-companies`) |
+| Report PDFs | `pdf/<sha256>.pdf` | kept | `hex clean pdf` (text stays in the database) |
 | Everything | (all of the above, plus the old `available_companies.txt`) | — | `hex clean all` |
+
+The database is not a cache: `hex clean db` deletes it (including manual values) and `hex clean raw` drops only the kept raw responses.
 
 - Location: `os.UserCacheDir()/hex/` (on macOS, `~/Library/Caches/hex/`).
 - Set `HEX_CACHE_DIR` to use a different folder.
 - Writes are atomic, so a crash never leaves a half-written cache file.
-- Profile and financial responses are **not** cached yet.
 
 ## Networking and reliability
 
@@ -127,7 +131,8 @@ hex version
 
 ## Testing (for contributors)
 
-- Tests never call the real cse.lk. `internal/csetest` runs a fake server backed by `testdata/cse/` fixtures.
+- Tests never call the real cse.lk or the Anthropic API. `internal/csetest` runs a fake server backed by `testdata/cse/` fixtures; `pdftest` builds small PDFs.
+- `testdata/extract/` holds the statement pages of 11 real reports with expected values (`TestGoldenReports`).
 - Golden files in `testdata/golden/` lock down command output. Regenerate them with `go test ./cmd -update`.
 - `go vet ./... && go test -race -cover ./...`
 
@@ -137,19 +142,19 @@ hex version
 
 - Output is JSON only. There are no tables and no `--json` toggle yet.
 - `company list --names` replaces spaces with dashes.
-- Profile and financials are fetched live every time (not cached).
+- `company show-profile` / `show-financial` still fetch live rather than reading the database.
+- Announcement dates (XD, payment) are not in the list endpoint, so corporate actions have no dates yet.
+- PDF extraction is heuristic: check low-confidence values against the PDF, or set them by hand.
 
 ## Roadmap
 
-These phases are planned and **not built yet**:
-
 | Phase | Scope |
 |---|---|
-| 0 | Foundation ✅ (this document) |
-| 1 | Local SQLite store and sync, table output, global `--json` |
-| 2 | Price history |
-| 3 | Corporate actions (dividends, splits, rights) |
+| 0 | Foundation ✅ |
+| 1 | Local SQLite store and sync ✅ (table output and global `--json` still to come) |
+| 2 | Price history ✅ (accumulated daily bars) |
+| 3 | Corporate actions: announcements stored ✅; dates and price adjustment to come |
 | 4 | Technical analysis (SMA/EMA, RSI, MACD, volatility) |
-| 5 | Fundamentals parsed from report PDFs (P/E, P/B, ROE, yield) |
+| 5 | Fundamentals from report PDFs ✅; ratios on top of them (P/E, P/B, ROE, yield) to come |
 | 6 | CBSL macro data |
 | 7 | Screener, watchlist, portfolio P&L, and release |

@@ -64,11 +64,22 @@ hex company show-profile jkh          # profile JSON; symbols are case-insensiti
 hex company profile CIC.X0000         # full codes select a specific series
 hex company show-financial JKH        # all report sections with PDF URLs
 hex company show-financial JKH -q     # only quarterly reports (-a annual, -o other, -w web links, -r extra, -b banner)
-hex clean all                         # remove cached data
+hex sync                              # market, symbol list and today's quotes into the local database
+hex sync --symbols jkh,comb           # plus company info, history, profile and report catalogue
+hex sync fundamentals --symbols jkh   # download the newest interim reports and read their statements
+hex sync fundamentals --symbols jkh --llm   # also ask Claude about low-confidence or scanned reports (ANTHROPIC_API_KEY)
+hex sync all --all-symbols            # everything for every listed security (slow; rate-limited)
+hex sync status                       # what is stored, how fresh, what failed
+hex reports list jkh                  # catalogued reports and their processing state
+hex reports extract jkh --show-pages  # read one report now and show the values
+hex fundamentals show jkh             # statement values with source, page and confidence
+hex fundamentals set jkh --period 2026-06-30 --field eps_basic=0.004   # manual override
+hex clean all                         # remove cached data (the database is kept)
+hex clean db                          # delete the local database
 hex completion zsh > "${fpath[1]}/_hex"   # shell completion (also bash, fish, powershell)
 ```
 
-Errors go to stderr and exit with status 1. The symbol list is cached for 24h under the user cache directory (`HEX_CACHE_DIR` overrides it).
+Errors go to stderr and exit with status 1. The symbol list and report PDFs are cached under the user cache directory (`HEX_CACHE_DIR` overrides it). Synced data lives in `hex.db` under the user config directory (`~/Library/Application Support/hex` on macOS; `HEX_DATA_DIR` overrides it). `hex sync` skips work that is still fresh and resumes after an interruption; schedule it with cron or launchd for daily updates. Values read from PDFs are informational, not investment advice; check low-confidence ones against the PDF.
 
 ## Test
 
