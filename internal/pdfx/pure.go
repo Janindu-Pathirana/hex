@@ -50,6 +50,9 @@ func pageLines(p pdf.Page) (lines []Line) {
 	content := p.Content()
 	gs := make([]glyph, 0, len(content.Text))
 	for _, t := range content.Text {
+		if t.X < 0 || t.Y < 0 {
+			continue // drawn off the page (hidden layers)
+		}
 		gs = append(gs, glyph{x: t.X, y: t.Y, w: t.W, size: t.FontSize, s: t.S})
 	}
 	return groupLines(gs, 2)

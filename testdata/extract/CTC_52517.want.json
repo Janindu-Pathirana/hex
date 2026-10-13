@@ -1,0 +1,20 @@
+{
+ "group|3M|2026-06-30|pat": 7694000000,
+ "group|3M|2026-06-30|pbt": 13624000000,
+ "group|3M|2026-06-30|revenue": 16565000000,
+ "group|3M|2026-06-30|tax": 5930000000,
+ "group|6M|2026-06-30|dividends_paid": 13229000000,
+ "group|6M|2026-06-30|fcf_financing": -13306000000,
+ "group|6M|2026-06-30|icf": -50000000,
+ "group|6M|2026-06-30|ocf": 7299000000,
+ "group|6M|2026-06-30|pat": 14393000000,
+ "group|6M|2026-06-30|pbt": 26622000000,
+ "group|6M|2026-06-30|revenue": 32635000000,
+ "group|6M|2026-06-30|tax": 12229000000,
+ "group|PIT|2026-06-30|cash": 25310000000,
+ "group|PIT|2026-06-30|current_assets": 37792000000,
+ "group|PIT|2026-06-30|current_liabilities": 33159000000,
+ "group|PIT|2026-06-30|total_assets": 45045000000,
+ "group|PIT|2026-06-30|total_equity_and_liabilities": 45045000000,
+ "group|PIT|2026-06-30|total_liabilities": 34233000000
+}

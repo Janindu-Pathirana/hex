@@ -24,7 +24,7 @@ import (
 const defaultRPS = 5
 
 // syncGroups are the data groups "hex sync" accepts, in help order.
-var syncGroups = []string{"market", "securities", "quotes", "info", "history", "profiles", "reports", "actions", "pdfs", "all"}
+var syncGroups = []string{"market", "securities", "quotes", "info", "history", "profiles", "reports", "actions", "pdfs", "fundamentals", "all"}
 
 type syncOptions struct {
 	symbols     []string
@@ -37,8 +37,9 @@ type syncOptions struct {
 
 // syncPlan is what a sync covers: the cse groups plus the report pipeline.
 type syncPlan struct {
-	cse  csejobs.Scope
-	pdfs bool
+	cse          csejobs.Scope
+	pdfs         bool
+	fundamentals bool
 }
 
 func newSyncCmd(a *app) *cobra.Command {
@@ -51,8 +52,9 @@ func newSyncCmd(a *app) *cobra.Command {
 Groups: market (status, indices, sectors, daily stats), securities (symbol
 list), quotes (today's prices), and per company: info (stockId, ranges,
 beta), history (daily bars, accumulated beyond one year), profiles,
-reports (PDF catalogue) and pdfs (download the newest reports and store
-their text). actions stores recent corporate announcements. "all" selects
+reports (PDF catalogue), pdfs (download the newest reports and store
+their text) and fundamentals (read income statement, balance sheet and cash
+flow figures from that text). actions stores recent corporate announcements. "all" selects
 every group.
 
 With no group, hex syncs market, securities and quotes, plus info, history,
@@ -99,7 +101,11 @@ func syncScope(groups []string, haveSymbols bool) syncPlan {
 			Market: has("market"), Securities: has("securities"), Quotes: has("quotes"), Info: has("info"),
 			History: has("history"), Profiles: has("profiles"), Reports: has("reports"), Actions: has("actions"),
 		},
-		pdfs: has("pdfs"),
+		pdfs:         has("pdfs") || has("fundamentals"),
+		fundamentals: has("fundamentals"),
+	}
+	if p.fundamentals {
+		p.cse.Info, p.cse.Profiles = true, true // shares and year end for the checks
 	}
 	if p.pdfs {
 		p.cse.Reports = true // the catalogue says which PDFs exist
@@ -159,11 +165,17 @@ func (a *app) runSync(cmd *cobra.Command, groups []string, o syncOptions) error 
 			return err
 		}
 		env.Files = blobs
-		var st engine.Stage
+		var st, fs engine.Stage
 		for _, code := range codes {
 			st = append(st, reportjobs.PDFs(code, o.reports))
+			if plan.fundamentals {
+				fs = append(fs, reportjobs.Fundamentals(code, o.reports, nil))
+			}
 		}
 		stages = append(stages, st)
+		if len(fs) > 0 {
+			stages = append(stages, fs)
+		}
 	}
 	sum, runErr := engine.Run(ctx, env, stages, engine.Options{Concurrency: o.concurrency, Force: o.force, DryRun: o.dryRun})
 

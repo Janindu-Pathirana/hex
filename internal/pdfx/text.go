@@ -238,8 +238,18 @@ func words(gs []glyph) []Word {
 var ligatures = strings.NewReplacer("\ufb00", "ff", "\ufb01", "fi", "\ufb02", "fl", "\ufb03", "ffi", "\ufb04", "ffl",
 	"\u2019", "'", "\u2018", "'", "\u201c", `"`, "\u201d", `"`, "\u2013", "-", "\u2014", "-", "\u00a0", " ")
 
-// normalize expands ligatures and folds typographic punctuation to ASCII.
-func normalize(s string) string { return strings.TrimSpace(ligatures.Replace(s)) }
+// normalize expands ligatures, folds typographic punctuation to ASCII and
+// drops control characters (unmapped glyphs).
+func normalize(s string) string {
+	s = ligatures.Replace(s)
+	s = strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f || r == 0xfffd {
+			return -1
+		}
+		return r
+	}, s)
+	return strings.TrimSpace(s)
+}
 
 func abs(f float64) float64 {
 	if f < 0 {

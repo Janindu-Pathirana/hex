@@ -109,3 +109,39 @@ func TestSelect(t *testing.T) {
 		t.Fatalf("select = %+v", got)
 	}
 }
+
+func TestFundamentalsFromStoredText(t *testing.T) {
+	f := setup(t)
+	ctx := context.Background()
+	o := reportjobs.Options{Quarterly: 1, Backend: pdfx.Pure{}, Limits: pdfx.DefaultLimits}
+	stages := []engine.Stage{{reportjobs.PDFs("JKH.N0000", o)}, {reportjobs.Fundamentals("JKH.N0000", o, nil)}}
+	if sum, err := engine.Run(ctx, f.env, stages, engine.Options{}); err != nil || sum.Err() != nil {
+		t.Fatalf("run: %v %v", err, sum.Err())
+	}
+	fs, err := f.env.Store.Fundamentals(ctx, "JKH.N0000", false)
+	if err != nil || len(fs) != 1 {
+		t.Fatalf("fundamentals = %+v, %v", fs, err)
+	}
+	got := fs[0]
+	if got.Field != "revenue" || got.Value != 135_443_355_000 || got.PeriodEnd != "2026-06-30" || got.PeriodType != "3M" ||
+		got.Source != store.SourcePDF || got.ReportID != 52111 || got.Page != 2 {
+		t.Fatalf("value = %+v", got)
+	}
+	runs, _ := f.env.Store.Runs(ctx, 52111)
+	if len(runs) != 1 || runs[0].Method != "rules" {
+		t.Fatalf("runs = %+v", runs)
+	}
+	r, _ := f.env.Store.Report(ctx, 52111)
+	if r.ParsedAt.IsZero() {
+		t.Fatal("report not marked parsed")
+	}
+
+	// A manual override wins over the extracted value.
+	manual := got
+	manual.Source, manual.Value, manual.Confidence = store.SourceManual, 1, 1
+	f.env.Store.Update(ctx, func(tx *store.Tx) error { return tx.UpsertFundamentals(ctx, []store.Fundamental{manual}) })
+	fs, _ = f.env.Store.Fundamentals(ctx, "JKH.N0000", false)
+	if fs[0].Source != store.SourceManual {
+		t.Fatalf("manual should win: %+v", fs[0])
+	}
+}
