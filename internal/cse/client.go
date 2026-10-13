@@ -46,6 +46,9 @@ type Client struct {
 	DownloadHTTP *http.Client // transport for file downloads; nil means HTTP
 	Retries      int          // extra attempts on network errors and 5xx
 	Backoff      time.Duration
+	// Observe, when set, receives every successful API response body before
+	// it is decoded (the scrape engine keeps these for diagnosis).
+	Observe func(endpoint string, form url.Values, body []byte)
 }
 
 // New returns a client pointed at the live site.
@@ -83,6 +86,9 @@ func (c *Client) post(ctx context.Context, endpoint string, form url.Values, out
 	}
 
 	trimmed := bytes.TrimSpace(body)
+	if c.Observe != nil && len(trimmed) > 0 {
+		c.Observe(endpoint, form, trimmed)
+	}
 	if len(trimmed) == 0 || string(trimmed) == "{}" || string(trimmed) == "[]" || string(trimmed) == "null" {
 		return fmt.Errorf("request %s: %w", endpoint, ErrNoData)
 	}
