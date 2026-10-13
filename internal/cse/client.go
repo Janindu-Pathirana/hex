@@ -27,27 +27,37 @@ const (
 	userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari"
 )
 
+// maxAPIBody caps a JSON API response. The largest seen (tradeSummary) is ~140 KB.
+const maxAPIBody = 16 << 20
+
+// ErrTooLarge is returned when a response body exceeds the allowed size.
+var ErrTooLarge = errors.New("response too large")
+
 // ErrNoData is returned when the API answers successfully but with no content,
 // which is how cse.lk reports an unknown symbol (204, or 200 with {} / []).
 var ErrNoData = errors.New("no data")
 
 // Client talks to cse.lk. The zero value is not usable; use New or Default.
 type Client struct {
-	BaseURL string       // API root, e.g. DefaultBaseURL; overridable in tests
-	SiteURL string       // website root, e.g. DefaultSiteURL
-	HTTP    *http.Client // transport
-	Retries int          // extra attempts on network errors and 5xx
-	Backoff time.Duration
+	BaseURL      string       // API root, e.g. DefaultBaseURL; overridable in tests
+	SiteURL      string       // website root, e.g. DefaultSiteURL
+	CDNBase      string       // report/logo root, e.g. CDNURL; overridable in tests
+	HTTP         *http.Client // transport for API calls
+	DownloadHTTP *http.Client // transport for file downloads; nil means HTTP
+	Retries      int          // extra attempts on network errors and 5xx
+	Backoff      time.Duration
 }
 
 // New returns a client pointed at the live site.
 func New() *Client {
 	return &Client{
-		BaseURL: DefaultBaseURL,
-		SiteURL: DefaultSiteURL,
-		HTTP:    httpclient.Default,
-		Retries: 2,
-		Backoff: 500 * time.Millisecond,
+		BaseURL:      DefaultBaseURL,
+		SiteURL:      DefaultSiteURL,
+		CDNBase:      CDNURL,
+		HTTP:         httpclient.Default,
+		DownloadHTTP: httpclient.Download,
+		Retries:      2,
+		Backoff:      500 * time.Millisecond,
 	}
 }
 
@@ -56,7 +66,7 @@ var Default = New()
 
 // post sends a form-encoded POST to endpoint and decodes the JSON response into out.
 func (c *Client) post(ctx context.Context, endpoint string, form url.Values, out any) error {
-	body, err := c.do(ctx, func() (*http.Request, error) {
+	body, err := c.do(ctx, c.HTTP, maxAPIBody, func() (*http.Request, error) {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+endpoint, strings.NewReader(form.Encode()))
 		if err != nil {
 			return nil, err
@@ -84,7 +94,7 @@ func (c *Client) post(ctx context.Context, endpoint string, form url.Values, out
 
 // get fetches a file relative to SiteURL.
 func (c *Client) get(ctx context.Context, path string) ([]byte, error) {
-	body, err := c.do(ctx, func() (*http.Request, error) {
+	body, err := c.do(ctx, c.HTTP, maxAPIBody, func() (*http.Request, error) {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.SiteURL+path, nil)
 		if err != nil {
 			return nil, err
@@ -98,8 +108,9 @@ func (c *Client) get(ctx context.Context, path string) ([]byte, error) {
 	return body, nil
 }
 
-// do runs the request built by newReq, retrying network errors and 5xx responses.
-func (c *Client) do(ctx context.Context, newReq func() (*http.Request, error)) ([]byte, error) {
+// do runs the request built by newReq on hc, retrying network errors and 5xx
+// responses. Bodies over limit bytes fail with ErrTooLarge.
+func (c *Client) do(ctx context.Context, hc *http.Client, limit int64, newReq func() (*http.Request, error)) ([]byte, error) {
 	var lastErr error
 	for attempt := 0; attempt <= c.Retries; attempt++ {
 		if attempt > 0 {
@@ -114,7 +125,7 @@ func (c *Client) do(ctx context.Context, newReq func() (*http.Request, error)) (
 		if err != nil {
 			return nil, err
 		}
-		body, retry, err := c.once(req)
+		body, retry, err := once(hc, req, limit)
 		if err == nil {
 			return body, nil
 		}
@@ -126,8 +137,8 @@ func (c *Client) do(ctx context.Context, newReq func() (*http.Request, error)) (
 	return nil, lastErr
 }
 
-func (c *Client) once(req *http.Request) (body []byte, retry bool, err error) {
-	resp, err := c.HTTP.Do(req)
+func once(hc *http.Client, req *http.Request, limit int64) (body []byte, retry bool, err error) {
+	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, true, err
 	}
@@ -137,9 +148,12 @@ func (c *Client) once(req *http.Request) (body []byte, retry bool, err error) {
 		}
 	}()
 
-	body, err = io.ReadAll(resp.Body)
+	body, err = io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if err != nil {
 		return nil, true, fmt.Errorf("read body: %w", err)
+	}
+	if int64(len(body)) > limit {
+		return nil, false, fmt.Errorf("%w: over %d bytes", ErrTooLarge, limit)
 	}
 	switch {
 	case resp.StatusCode == http.StatusNoContent:
