@@ -12,6 +12,7 @@ import (
 
 	"github.com/Janindu-Pathirana/hex/cmd/company"
 	"github.com/Janindu-Pathirana/hex/internal/engine"
+	"github.com/Janindu-Pathirana/hex/internal/llm"
 	"github.com/Janindu-Pathirana/hex/internal/output"
 	"github.com/Janindu-Pathirana/hex/internal/pdfx"
 	"github.com/Janindu-Pathirana/hex/internal/sources/csejobs"
@@ -33,6 +34,9 @@ type syncOptions struct {
 	dryRun      bool
 	concurrency int
 	reports     reportjobs.Options
+	llm         bool
+	llmModel    string
+	llmMax      int
 }
 
 // syncPlan is what a sync covers: the cse groups plus the report pipeline.
@@ -82,6 +86,9 @@ where it stopped. Requests are rate-limited and run at most 4 at a time.`,
 	f.IntVar(&o.reports.Quarterly, "quarterly-reports", o.reports.Quarterly, "Newest interim reports per company for pdfs")
 	f.IntVar(&o.reports.Annual, "annual-reports", o.reports.Annual, "Newest annual reports per company for pdfs (large files)")
 	f.BoolVar(&o.reports.Reparse, "reparse", false, "Re-extract already processed reports from the cached PDFs")
+	f.BoolVar(&o.llm, "llm", false, "Ask Claude to re-read low-confidence or scanned reports (needs ANTHROPIC_API_KEY; costs money)")
+	f.StringVar(&o.llmModel, "llm-model", llm.DefaultModel, "Claude model for --llm")
+	f.IntVar(&o.llmMax, "llm-max", 5, "Most reports sent to Claude in one run (--llm)")
 	cmd.MarkFlagsMutuallyExclusive("symbols", "all-symbols")
 	_ = cmd.RegisterFlagCompletionFunc("symbols", a.completeSymbols)
 
@@ -165,11 +172,18 @@ func (a *app) runSync(cmd *cobra.Command, groups []string, o syncOptions) error 
 			return err
 		}
 		env.Files = blobs
+		var fb reportjobs.Fallback
+		if o.llm {
+			if !plan.fundamentals {
+				return errors.New("--llm needs the fundamentals group")
+			}
+			fb = llm.New(o.llmModel, o.llmMax, a.llmOpts...)
+		}
 		var st, fs engine.Stage
 		for _, code := range codes {
 			st = append(st, reportjobs.PDFs(code, o.reports))
 			if plan.fundamentals {
-				fs = append(fs, reportjobs.Fundamentals(code, o.reports, nil))
+				fs = append(fs, reportjobs.Fundamentals(code, o.reports, fb))
 			}
 		}
 		stages = append(stages, st)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/Janindu-Pathirana/hex/internal/csetest"
 	"github.com/Janindu-Pathirana/hex/internal/engine"
+	"github.com/Janindu-Pathirana/hex/internal/extract"
 	"github.com/Janindu-Pathirana/hex/internal/pdfx"
 	"github.com/Janindu-Pathirana/hex/internal/pdfx/pdftest"
 	"github.com/Janindu-Pathirana/hex/internal/sources/csejobs"
@@ -143,5 +144,41 @@ func TestFundamentalsFromStoredText(t *testing.T) {
 	fs, _ = f.env.Store.Fundamentals(ctx, "JKH.N0000", false)
 	if fs[0].Source != store.SourceManual {
 		t.Fatalf("manual should win: %+v", fs[0])
+	}
+}
+
+type fakeFallback struct{ calls int }
+
+func (f *fakeFallback) Name() string { return "fake-model" }
+func (f *fakeFallback) Extract(_ context.Context, _ *engine.Env, r store.Report, meta extract.Meta, rules extract.Result) (extract.Result, error) {
+	f.calls++
+	v := extract.Value{Field: "pat", Statement: extract.IncomeStatement, Scope: extract.ScopeGroup, PeriodEnd: meta.PeriodEnd,
+		PeriodType: "3M", Value: 42, Page: 2, Raw: "42"}
+	return extract.Finish([]extract.Value{v}, meta, nil), nil
+}
+
+func TestLowConfidenceGoesToFallback(t *testing.T) {
+	f := setup(t)
+	ctx := context.Background()
+	o := reportjobs.Options{Quarterly: 1, Backend: pdfx.Pure{}, Limits: pdfx.DefaultLimits}
+	fb := &fakeFallback{}
+	stages := []engine.Stage{{reportjobs.PDFs("JKH.N0000", o)}, {reportjobs.Fundamentals("JKH.N0000", o, fb)}}
+	if sum, err := engine.Run(ctx, f.env, stages, engine.Options{}); err != nil || sum.Err() != nil {
+		t.Fatalf("run: %v %v", err, sum.Err())
+	}
+	if fb.calls != 1 {
+		t.Fatalf("fallback called %d times, want 1 (one value scores below %.1f)", fb.calls, reportjobs.LowConfidence)
+	}
+	all, _ := f.env.Store.Fundamentals(ctx, "JKH.N0000", true)
+	sources := map[string]bool{}
+	for _, v := range all {
+		sources[v.Source] = true
+	}
+	if !sources[store.SourcePDF] || !sources[store.SourceLLM] {
+		t.Fatalf("sources = %v", sources)
+	}
+	runs, _ := f.env.Store.Runs(ctx, 52111)
+	if len(runs) != 2 || runs[0].Method != "llm" || runs[0].Model != "fake-model" {
+		t.Fatalf("runs = %+v", runs)
 	}
 }

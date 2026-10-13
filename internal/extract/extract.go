@@ -368,3 +368,46 @@ func sortValues(vs []Value) {
 		return a.PeriodType < b.PeriodType
 	})
 }
+
+// FieldByName returns the canonical field with that name, or nil.
+func FieldByName(name string) *Field {
+	for i := range Fields {
+		if Fields[i].Name == name {
+			return &Fields[i]
+		}
+	}
+	return nil
+}
+
+// Finish scores values from any source with the accounting identities and
+// fills Confidence and Issues, as Extract does for its own values.
+func Finish(vals []Value, meta Meta, issues []string) Result {
+	res := Result{Values: vals, Pages: map[int]string{}, Issues: issues}
+	res.Issues = append(res.Issues, score(res.Values, meta)...)
+	for _, v := range vals {
+		res.Pages[v.Page] = v.Statement
+	}
+	if len(vals) > 0 {
+		sum := 0.0
+		for _, v := range res.Values {
+			sum += v.Confidence
+		}
+		res.Confidence = sum / float64(len(vals))
+	}
+	return res
+}
+
+// CandidatePages returns the pages that carry a statement title, even when
+// their columns could not be read: what a fallback reader should look at.
+func CandidatePages(pages []pdfx.Page) []int {
+	var out []int
+	for _, p := range pages {
+		if len(sections(p)) > 0 {
+			out = append(out, p.N)
+		}
+	}
+	return out
+}
+
+// ParseAmount parses a figure as printed in a statement ("(1,234)" is -1234).
+func ParseAmount(s string) (float64, bool) { return parseNumber(s) }
