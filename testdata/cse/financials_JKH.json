@@ -1,0 +1,76 @@
+{
+ "infoAnnualData": [
+  {
+   "id": 51321,
+   "path": "cmt/upload_report_file/508_1779789508055.pdf",
+   "manualDate": 1779733800000,
+   "uploadedDate": 1779789508055,
+   "fileText": "Annual Report as at 31st March 2026",
+   "path2": null,
+   "authorizedDate": 1779794879336
+  },
+  {
+   "id": 47951,
+   "path": "cmt/upload_report_file/508_1748344127576.pdf",
+   "manualDate": 1743359400000,
+   "uploadedDate": 1748344127576,
+   "fileText": "Annual Report 2024/25",
+   "path2": "cmt/upload_report_file/508_1748344127576.",
+   "authorizedDate": null
+  }
+ ],
+ "infoQuarterlyData": [
+  {
+   "id": 52111,
+   "path": "cmt/upload_report_file/508_1785229278745.pdf",
+   "manualDate": 1785177000000,
+   "uploadedDate": 1785229278745,
+   "fileText": "Interim Financial Statements for the Quarter ended 30th June 2026",
+   "path2": null,
+   "authorizedDate": 1785231274179
+  },
+  {
+   "id": 51319,
+   "path": "cmt/upload_report_file/508_1779789322176.pdf",
+   "manualDate": 1779733800000,
+   "uploadedDate": 1779789322176,
+   "fileText": "Interim Financial Statements for the Quarter ended 31st March 2026",
+   "path2": null,
+   "authorizedDate": 1779793431325
+  }
+ ],
+ "infoWebLink": [],
+ "infoOtherData": [
+  {
+   "id": 23399,
+   "path": "upload_report_file/508_1527245600414.pdf",
+   "manualDate": 1522434600000,
+   "uploadedDate": 1527186600000,
+   "fileText": "Press Release 31/03/2018",
+   "path2": null,
+   "authorizedDate": null
+  },
+  {
+   "id": 30392,
+   "path": "upload_report_file/508_1495793913.pdf",
+   "manualDate": 1490898600000,
+   "uploadedDate": 1495737000000,
+   "fileText": "Press Release - 31-03-2017",
+   "path2": null,
+   "authorizedDate": null
+  }
+ ],
+ "reqFinancial": [
+  {
+   "secId": 508,
+   "elmId": "1",
+   "data": "Financial Statements Summary"
+  },
+  {
+   "secId": 508,
+   "elmId": "1",
+   "data": "Financial Statements Summary"
+  }
+ ],
+ "infoCompanyBannerAd": null
+}
