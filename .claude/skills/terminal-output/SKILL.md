@@ -1,11 +1,11 @@
 ---
 name: terminal-output
-description: Output formatting standards for the hex CLI: aligned tables, --json machine output, LKR/number/percent formatting, gain/loss colouring respecting NO_COLOR and non-TTY, sparklines and ASCII charts, and Asia/Colombo date display. Use when printing anything from a hex command, replacing PrettyPrintJSON dumps with readable output, or adding charts to the terminal.
+description: Output formatting standards for the hex CLI: aligned tables, --json machine output, LKR/number/percent formatting, gain/loss colouring respecting NO_COLOR and non-TTY, sparklines and ASCII charts, and Asia/Colombo date display. Use when printing anything from a hex command, replacing JSON dumps with readable output, or adding charts to the terminal.
 ---
 
 # Terminal output for hex
 
-Today most commands dump raw JSON with `util.PrettyPrintJSON`. The target is a human-readable table by default and `--json` for scripts.
+Today commands print JSON with `output.JSON` (`internal/output`). The target is a human-readable table by default and `--json` for scripts.
 
 ## Shape
 Create `internal/output` with:

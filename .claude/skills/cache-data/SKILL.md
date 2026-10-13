@@ -1,14 +1,14 @@
 ---
 name: cache-data
-description: Add or change local caching of CSE data in hex: CacheConfig entries, TTL choices by data type, read/write helpers under the user cache dir, storing accumulated price history, and wiring a matching "hex clean" subcommand. Use when a command re-fetches data that could be cached, when adding price history storage, or when touching internal/const.go or cmd/clean-cash.go.
+description: Add or change local caching of CSE data in hex: CacheConfig entries, TTL choices by data type, read/write helpers under the user cache dir, storing accumulated price history, and wiring a matching "hex clean" subcommand. Use when a command re-fetches data that could be cached, when adding price history storage, or when touching internal/const.go or cmd/clean.go.
 ---
 
 # Caching in hex
 
 ## Existing pattern
 - `internal/const.go`: `CacheDir = "hex"`, `CacheConfig{CacheFile, CacheTTL}`, and `AvailableCompaniesCache` (24h).
-- `cmd/company/available_companies.go`: path = `os.UserCacheDir()/hex/<file>`. The cache is valid if the file's mtime is within the TTL. Save with `MkdirAll(0o755)` + `WriteFile(0o644)`.
-- `cmd/clean-cash/root.go` + `cmd/clean-cash.go`: `hex clean all` and `hex clean <name>`.
+- `internal/cache`: `Load(cfg, &v)` / `Save(cfg, v)` (JSON, atomic tmp + rename) / `Remove` / `RemoveAll`. Path = `$HEX_CACHE_DIR` or `os.UserCacheDir()/hex/<file>`. Valid if mtime is within the TTL; corrupt files are a miss.
+- `cmd/clean.go`: `hex clean all` (loops `internal.AllCaches`, ignores missing files) and `hex clean <name>`.
 
 ## Adding a cached source
 1. Add a `CacheConfig` var in `internal/const.go`:
@@ -24,7 +24,7 @@ description: Add or change local caching of CSE data in hex: CacheConfig entries
    ```
    Allow a root override (e.g. `HEX_CACHE_DIR` env) so tests can use `t.TempDir()`.
 3. Keep a list of all configs, e.g. `internal.AllCaches = []CacheConfig{...}`. Make `CleanAllCash` loop over it, and have it **ignore `os.ErrNotExist`**: today it fails when the file is missing.
-4. Add `hex clean <name>` in `cmd/clean-cash.go`.
+4. Add `hex clean <name>` in `cmd/clean.go`.
 5. Add a `--refresh` (or `--no-cache`) persistent flag that bypasses reads but still writes.
 
 ## TTL guide

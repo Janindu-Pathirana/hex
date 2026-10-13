@@ -55,10 +55,10 @@ This is the best single source for a screener: one call returns all securities.
 - Daily bars are stamped 18:30 UTC (= 00:00 Asia/Colombo of the trade date).
 
 ### `companyProfile` (param `symbol`)
-Mapped in `internal/custom-structs/company.go`: directors, `reqComSumInfo` (sector, boardType, finYearEnd, auditors…), business summary, logos.
+Mapped in `internal/cse/company.go` (`CompanyProfile`): directors, `reqComSumInfo` (sector, boardType, finYearEnd, auditors…), business summary, logos.
 
 ### `financials` (param `symbol`)
-Mapped in `internal/custom-structs/company-finace.go`: `infoAnnualData`, `infoQuarterlyData`, `infoOtherData`, each with `path` → PDF at `https://cdn.cse.lk/<path>` (verified), `fileText` (e.g. "Annual Report as at 31st March 2026"), `manualDate`/`uploadedDate`/`authorizedDate` (ms).
+Mapped in `internal/cse/company.go` (`Financials`, `Report`): `infoAnnualData`, `infoQuarterlyData`, `infoOtherData`, each with `path` → PDF at `https://cdn.cse.lk/<path>` (verified), `fileText` (e.g. "Annual Report as at 31st March 2026"), `manualDate`/`uploadedDate`/`authorizedDate` (ms).
 
 ## Announcements
 
@@ -71,4 +71,4 @@ Mapped in `internal/custom-structs/company-finace.go`: `infoAnnualData`, `infoQu
 ## Static
 
 ### `GET https://www.cse.lk/chat/company_symbol_list.csv`
-A header row, then `COMPANY NAME,TICKER.SERIES`. Used by `cmd/company/available_companies.go` and cached for 24h.
+A header row, then `COMPANY NAME,TICKER.SERIES`. Parsed by `cse.ParseSymbolList`, cached for 24h by `company.Securities` (`cmd/company/company.go`). Unknown symbols: `companyProfile` returns **204** with an empty body, `financials` returns `{}` (verified 2026-10-13); both map to `cse.ErrNoData`.

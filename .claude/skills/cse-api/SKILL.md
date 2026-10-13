@@ -9,7 +9,7 @@ The cse.lk website runs on an undocumented JSON API at `https://www.cse.lk/api/<
 
 ## Request format (verified 2026-10-13)
 - Method `POST`, body `application/x-www-form-urlencoded`. An empty body is fine for market-wide endpoints.
-- Headers (copy from `cmd/company/root.go`):
+- Headers (set by `Client.post` in `internal/cse/client.go`):
   ```
   Content-Type: application/x-www-form-urlencoded; charset=UTF-8
   Accept: application/json, text/plain, */*
@@ -50,7 +50,7 @@ Full field lists are in [references/endpoints.md](references/endpoints.md). Summ
 **Periods** (both chart endpoints): `1` intraday (per trade or minute), `2` ~1 week, `3` ~1 month, `4` ~3 months, `5` ~1 year (daily bars). Daily bars are stamped at 00:00 Colombo time (18:30 UTC the previous day). Field keys for stock history are `t` time, `p` close/last, `h` high, `l` low, `o` open (often null), `q` volume. Anything beyond 1 year must be accumulated locally (see `cache-data`).
 
 ## Client design (target)
-Replace the duplicated code in `cmd/company/root.go` with `internal/cse`:
+Implemented in `internal/cse` (Phase 0). Add new endpoints as methods on `Client`:
 ```go
 type Client struct {
 	BaseURL string       // "https://www.cse.lk/api/" — overridable in tests
@@ -62,7 +62,7 @@ func (c *Client) TradeSummary(ctx context.Context) ([]TradeSummary, error)
 `post` sets the headers, checks the status, and decodes JSON. It treats an empty `{}` / `[]` response as `ErrNoData` (an unknown symbol usually returns `{}` with status 200, not a 404).
 
 ## Structs
-- Put them in `internal/cse/types.go` (new code) or `internal/custom-structs/` (existing).
+- Put them in `internal/cse/` next to the method that returns them.
 - Keep the API's spelling in JSON tags (`reqTradeSummery`, `topLooses`, `sharevolume`) but use correct Go names (`TradeSummary`, `ShareVolume`).
 - Any field seen as `null` becomes a pointer. Numbers that may arrive as `1.0` go in `float64`, even when they look like ints.
 - Map only the fields you use. Unknown fields are ignored by `encoding/json`.

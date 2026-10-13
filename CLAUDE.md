@@ -16,31 +16,38 @@ go build -ldflags "-X github.com/Janindu-Pathirana/hex/cmd.Version=0.1.0" -o hex
 
 | Path | Role |
 |---|---|
-| `main.go` | Calls `cmd.Execute()` |
-| `cmd/root.go` | Root cobra command `hex` |
-| `cmd/<group>.go` | Cobra wiring for a command group: commands, flags, `init()` registration (`company.go`, `clean-cash.go`, `version.go`) |
-| `cmd/<group>/` | Logic for that group: fetching, parsing, caching (`cmd/company/`, `cmd/clean-cash/`) |
-| `internal/const.go` | `CacheDir` and `CacheConfig` (file + TTL) for each cached data source |
+| `main.go` | Calls `cmd.Execute()`; embeds tzdata |
+| `cmd/root.go` | `NewRootCmd()` builds the tree; `app` holds injectable deps (the CSE client) |
+| `cmd/<group>.go` | Cobra wiring for a group: `new<Group>Cmd(a *app)` constructors, flags (`company.go`, `clean.go`, `version.go`) |
+| `cmd/args.go` | Shared symbol completion (`ValidArgsFunction`) and legacy flag-name normalisation |
+| `cmd/<group>/` | Logic for that group (`cmd/company/`: cached securities, symbol resolution, report views) |
+| `internal/cse/` | cse.lk client: `Client{BaseURL, SiteURL, HTTP}`, `post`/`get` with retries, `ErrNoData`, `ErrUnknownSymbol`, `Resolve`, response types |
+| `internal/csetest/` | Fake cse.lk server for tests, backed by `testdata/cse/` fixtures |
+| `internal/cache/` | JSON file cache: `Load`/`Save` (atomic)/`Remove`/`RemoveAll`; `HEX_CACHE_DIR` overrides the root |
+| `internal/const.go` | `CacheDir`, `CacheConfig` per cached source, `AllCaches` |
+| `internal/output/` | `JSON` writer, Asia/Colombo date helpers |
 | `internal/httpclient/` | `httpclient.Default`, the shared `*http.Client` (30s timeout) |
-| `internal/custom-structs/` | JSON structs for CSE API responses (package `customStructs`) |
-| `internal/util/` | `PrettyPrintJSON` |
+| `testdata/` | `cse/` API fixtures, `golden/` expected command output (`go test ./cmd -update` rewrites) |
 
 ## Conventions
 
-- Wrap errors with context: `fmt.Errorf("request company profile: %w", err)`, using a lowercase "verb noun" prefix.
-- Send all HTTP through `httpclient.Default`. CSE API calls are form-encoded `POST`s with browser-like `Origin`/`Referer`/`User-Agent` headers (see the `cse-api` skill).
-- Cache files live in `os.UserCacheDir()/hex/<file>`. Every new cache gets a `CacheConfig` in `internal/const.go` **and** a subcommand under `hex clean` in `cmd/clean-cash.go`.
-- Symbols: the user types `JKH`; the API usually wants the full security code `JKH.N0000`.
+- Wrap errors with context: `fmt.Errorf("fetch company profile for %s: %w", code, err)`, using a lowercase "verb noun" prefix.
+- Commands use `RunE` and write to `cmd.OutOrStdout()`; cobra prints errors to stderr and `Execute` exits 1.
+- Send all CSE HTTP through `internal/cse.Client` (which uses `httpclient.Default`). Never hard-code cse.lk URLs elsewhere.
+- Cache files live in `os.UserCacheDir()/hex/<file>` (or `$HEX_CACHE_DIR`). Every new cache gets a `CacheConfig` in `internal/const.go`, an entry in `AllCaches`, **and** a subcommand under `hex clean` in `cmd/clean.go`.
+- Symbols: users type `jkh` or `CIC.X0000`; resolve with `company.Resolve` (case-insensitive, prefers `.N0000`, keeps X/U series). The API gets the full code.
+- Tests never hit the real cse.lk. Use `csetest.New(t)` and `t.Setenv(cache.EnvDir, t.TempDir())`.
 - Analysis output is informational, not investment advice. Keep that disclaimer on analysis commands.
+
+## Roadmap
+
+The approved data-platform plan (CSE + CBSL sources, SQLite store, PDF fundamentals, analysis) is phased: 0 foundation (done), 1 store and sync, 2 history, 3 corporate actions, 4 technical analysis, 5 fundamentals from PDFs, 6 CBSL macro, 7 screener/watchlist/portfolio and release.
 
 ## Known tech debt (fix when touching the area)
 
-- The CSE POST boilerplate is duplicated in `cmd/company/root.go`. Extract a shared `cse` client with an injectable base URL so it can be tested.
-- `ValidArgs: getValidArgs()` in `cmd/company.go` runs a network fetch during `init()` on **every** invocation. Replace it with a lazy `ValidArgsFunction`.
-- In `show-financial`, `-b` (`showBannerAd`) and `-c` (`showCompanyBannerAd`) print the same field.
-- "cash" vs "cache" naming is mixed (`clean-cash`, `CleanAllCash`). Use "cache" in new code.
-- `util.PrettyPrintJSON` calls `log.Fatalf`. Return errors instead.
-- There are no tests yet.
+- Output is JSON only. Tables and a global `--json` toggle come with `internal/output` in Phase 1 (see `terminal-output`).
+- `company list --names` replaces spaces with dashes (kept for compatibility).
+- Profile and financials responses are not cached yet.
 
 ## Skill map
 

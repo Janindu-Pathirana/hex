@@ -5,7 +5,7 @@ description: Testing approach for the hex Go CLI, covering table-driven unit tes
 
 # Testing hex
 
-There are no tests yet. Every new feature ships with tests, and you should add tests around existing code when you touch it.
+Every new feature ships with tests, and you should add tests around existing code when you touch it.
 
 ```bash
 go test ./...                    # fast
@@ -14,7 +14,7 @@ go test ./cmd/... -run TestMarket -update   # regenerate golden files
 ```
 
 ## 1. Make code testable first
-- **CSE base URL and client must be injectable.** Constants like `urlCompanyProfilePost` in `cmd/company/root.go` can't point at a fake. Move them to `internal/cse.Client{BaseURL, HTTP}` (see `cse-api`), with a package-level default the commands use and tests can swap.
+- **CSE client is injectable** (done): `internal/csetest.New(t)` returns a fake server and a `*cse.Client`; command tests build `newRootCmd(&app{cse: client})` (see `cmd/cmd_test.go`).
 - **Cache dir must be overridable.** Read `HEX_CACHE_DIR` (or take a dir argument) instead of calling `os.UserCacheDir()` directly. Do the same for the config dir (`HEX_CONFIG_DIR`).
 - **Time must be injectable** for TTL and market-hours logic: `var now = time.Now` or pass a `time.Time`.
 - **Commands write to `cmd.OutOrStdout()`**, not `fmt.Println`, so tests can capture output.

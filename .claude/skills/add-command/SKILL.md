@@ -50,7 +50,7 @@ Rules:
 - Use `Example:` strings for help text.
 
 ## 3. Logic package `cmd/<group>/`
-- Fetch through the shared CSE client (see the `cse-api` skill). Don't copy the POST boilerplate from `cmd/company/root.go`.
+- Fetch through the shared CSE client (see the `cse-api` skill). Use `a.cse` (an `*cse.Client` on the `app` struct in `cmd/root.go`); never build requests by hand.
 - Return typed structs and errors, and leave printing to the caller.
 - Cache if the data is reused (see `cache-data`).
 
@@ -70,7 +70,7 @@ func completeSymbols(cmd *cobra.Command, args []string, toComplete string) ([]st
 	return syms, cobra.ShellCompDirectiveNoFileComp
 }
 ```
-Use `Args: symbolArg, ValidArgsFunction: completeSymbols`. **Never** use `ValidArgs: getValidArgs()`: it fetches from the network during `init()` on every run.
+Existing helpers: `ValidArgsFunction: a.completeSymbols` (`cmd/args.go`) and `a.resolve(cmd, input)` (`cmd/company.go`). **Never** use `ValidArgs: <network call>`: it would fetch during command construction on every run.
 
 Resolve the short symbol to its full security code(s) from the company list (`NAME,JKH.N0000`). A company can have both `.N0000` and `.X0000` lines. Default to `.N0000` and accept an explicit full code.
 

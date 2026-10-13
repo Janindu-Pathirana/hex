@@ -9,13 +9,13 @@ Module `github.com/Janindu-Pathirana/hex`, Go 1.26, the only dependency is `spf1
 
 ## Layout
 - `cmd/<group>.go`: cobra commands and flags only, with no HTTP or parsing logic.
-- `cmd/<group>/`: logic for one command group. The package name is the folder name without dashes (`cmd/clean-cash` → `package cleancash`).
+- `cmd/<group>/`: logic for one command group. The package name is the folder name without dashes (e.g. `cmd/company` → `package company`).
 - `internal/`: code shared by groups. Put new shared domain code here:
   - `internal/cse/`: the CSE API client (see `cse-api`)
   - `internal/analysis/`: pure functions for indicators and ratios, with no I/O (see `technical-analysis`, `fundamental-analysis`)
   - `internal/output/`: table, JSON and formatting helpers (see `terminal-output`)
   - `internal/cache/`: a generic cache read/write if a second cached source appears (see `cache-data`)
-- New folders use lowercase names with no dashes. The existing `custom-structs` folder (package `customStructs`) is legacy; don't copy its style.
+- New folders use lowercase names with no dashes.
 
 ## Errors
 - Wrap with a lowercase "verb noun" prefix: `fmt.Errorf("fetch trade summary: %w", err)`.
