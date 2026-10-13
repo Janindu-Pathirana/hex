@@ -1,5 +1,5 @@
 # Binaries
-hex
+/hex
 *.exe
 *.exe~
 *.dll
