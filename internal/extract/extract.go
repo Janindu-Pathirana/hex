@@ -122,7 +122,7 @@ func Extract(pages []pdfx.Page, meta Meta) Result {
 		for _, v := range res.Values {
 			sum += v.Confidence
 		}
-		res.Confidence = sum / float64(len(res.Values))
+		res.Confidence = math.Round(sum/float64(len(res.Values))*100) / 100
 	} else {
 		res.Issues = append(res.Issues, "no statement values found")
 	}
@@ -392,7 +392,7 @@ func Finish(vals []Value, meta Meta, issues []string) Result {
 		for _, v := range res.Values {
 			sum += v.Confidence
 		}
-		res.Confidence = sum / float64(len(vals))
+		res.Confidence = math.Round(sum/float64(len(vals))*100) / 100
 	}
 	return res
 }

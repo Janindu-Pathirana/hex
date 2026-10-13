@@ -70,7 +70,7 @@ func PDFs(code string, o Options) engine.Job {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			if err := processPDF(ctx, env, r, o); err != nil {
+			if err := ProcessPDF(ctx, env, r, o); err != nil {
 				errs = append(errs, fmt.Errorf("report %d (%s): %w", r.ID, r.Title, err))
 			}
 		}
@@ -78,7 +78,9 @@ func PDFs(code string, o Options) engine.Job {
 	}}
 }
 
-func processPDF(ctx context.Context, env *engine.Env, r store.Report, o Options) error {
+// ProcessPDF downloads one report (unless cached) and stores its text. It
+// does nothing when the text is already stored, unless o.Reparse is set.
+func ProcessPDF(ctx context.Context, env *engine.Env, r store.Report, o Options) error {
 	haveText := r.TextStatus == store.TextOK || r.TextStatus == store.TextScanned
 	cached := r.SHA256 != "" && env.Files.Has(r.SHA256)
 	if haveText && !o.Reparse {

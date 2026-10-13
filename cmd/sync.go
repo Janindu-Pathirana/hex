@@ -139,39 +139,15 @@ func (a *app) runSync(cmd *cobra.Command, groups []string, o syncOptions) error 
 		plan.cse.Securities = true // matching announcements needs the symbol list
 	}
 
-	dir, err := store.Dir()
+	env, done, err := a.engineEnv(cmd)
 	if err != nil {
 		return err
 	}
-	unlock, err := engine.Lock(dir)
-	if err != nil {
-		return err
-	}
-	defer unlock()
-
-	db, err := store.OpenDefault(ctx)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	log := cmd.ErrOrStderr()
-	client := *a.cse
-	engine.RecordRaw(&client, db, log)
-	env := &engine.Env{
-		CSE:   engine.Limit(&client, engine.NewLimiter(a.rps, engine.MaxConcurrency)),
-		Store: db,
-		Log:   log,
-	}
+	defer done()
 
 	start := time.Now()
 	stages := csejobs.Plan(plan.cse, codes, start)
 	if plan.pdfs {
-		blobs, err := pdfx.OpenBlobs()
-		if err != nil {
-			return err
-		}
-		env.Files = blobs
 		var fb reportjobs.Fallback
 		if o.llm {
 			if !plan.fundamentals {
@@ -210,6 +186,41 @@ func (a *app) runSync(cmd *cobra.Command, groups []string, o syncOptions) error 
 		return fmt.Errorf("sync: %d job(s) failed (see 'hex sync status')", n)
 	}
 	return nil
+}
+
+// engineEnv takes the sync lock, opens the database and the PDF store, and
+// returns a rate-limited engine environment. Call done when finished.
+func (a *app) engineEnv(cmd *cobra.Command) (env *engine.Env, done func(), err error) {
+	dir, err := store.Dir()
+	if err != nil {
+		return nil, nil, err
+	}
+	unlock, err := engine.Lock(dir)
+	if err != nil {
+		return nil, nil, err
+	}
+	db, err := store.OpenDefault(cmd.Context())
+	if err != nil {
+		unlock()
+		return nil, nil, err
+	}
+	blobs, err := pdfx.OpenBlobs()
+	if err != nil {
+		db.Close()
+		unlock()
+		return nil, nil, err
+	}
+	log := cmd.ErrOrStderr()
+	client := *a.cse
+	engine.RecordRaw(&client, db, log)
+	env = &engine.Env{
+		CSE:   engine.Limit(&client, engine.NewLimiter(a.rps, engine.MaxConcurrency)),
+		Store: db,
+		Files: blobs,
+		Log:   log,
+		Now:   time.Now,
+	}
+	return env, func() { db.Close(); unlock() }, nil
 }
 
 // syncCodes resolves --symbols / --all-symbols to full security codes.

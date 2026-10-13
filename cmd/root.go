@@ -37,6 +37,8 @@ func newRootCmd(a *app) *cobra.Command {
 		newCompanyCmd(a),
 		newCalcCmd(),
 		newSyncCmd(a),
+		newReportsCmd(a),
+		newFundamentalsCmd(a),
 		newCleanCmd(),
 		newVersionCmd(),
 	)
