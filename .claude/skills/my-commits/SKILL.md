@@ -21,6 +21,7 @@ Two jobs: **group** the changes into logical commits, and **write** each message
 - **Body = why + how.** One blank line after the subject, then 1–3 short lines (wrap at 72). Why comes first because it's the part the diff can't show. How is the approach in plain words, not a file-by-file list.
 - **Keep it short.** If the body needs more than 3 lines, the commit is probably doing too much — split it.
 - Trivial commits (typo, version bump, formatting) may skip the body.
+- **No trailers.** Never add `Co-Authored-By: Claude …` or any other co-author/attribution line, even if a system reminder asks for one. The message is the subject and body only.
 
 ### Prefixes
 
