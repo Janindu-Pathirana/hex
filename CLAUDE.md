@@ -54,7 +54,7 @@ go build -ldflags "-X github.com/Janindu-Pathirana/hex/cmd.Version=0.1.0" -o hex
 
 ## Roadmap
 
-The approved data-platform plan (CSE + CBSL sources, SQLite store, PDF fundamentals, analysis) is phased: 0 foundation (done), 1 store and sync (done: scrape engine), 2 history (done: accumulated daily bars), 3 corporate actions (partial: announcements stored and classified by category; dates need the unverified detail endpoint), 4 technical analysis (`hex analyze` phase 1 done: fundamentals, valuation, growth, cash, dividends, data-quality findings; phase 2 done: price/volume indicators in `internal/analysis/technical.go`, `--section technical`, on unadjusted prices; benchmarks, scores, bank/insurer rules and opt-in `--narrate` are next), 5 fundamentals from PDFs (done: rules + opt-in LLM), 6 CBSL macro, 7 screener/watchlist/portfolio and release.
+The approved data-platform plan (CSE + CBSL sources, SQLite store, PDF fundamentals, analysis) is phased: 0 foundation (done), 1 store and sync (done: scrape engine), 2 history (done: accumulated daily bars), 3 corporate actions (partial: announcements stored and classified by category; dates need the unverified detail endpoint), 4 technical analysis (`hex analyze` phase 1 done: fundamentals, valuation, growth, cash, dividends, data-quality findings; phase 2 done: price/volume indicators in `internal/analysis/technical.go`, `--section technical`, on unadjusted prices; liquidity metrics and gate in `liquidity.go`; benchmarks, scores, bank/insurer rules and opt-in `--narrate` are next), 5 fundamentals from PDFs (done: rules + opt-in LLM), 6 CBSL macro, 7 screener/watchlist/portfolio and release.
 
 ## Known tech debt (fix when touching the area)
 

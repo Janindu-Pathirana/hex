@@ -67,9 +67,16 @@ Price and volume
   Return vs ASPI, 1 year             n/m     needs stock and ASPI history from 2025-01-14; 30 bars stored
   Days with a price change, last 14  14      as of 2026-01-14
 
+Liquidity
+  Share of days traded                           100.00%  last 29 days to 2026-01-14
+  Share of days with no price change             0.00%    last 29 days to 2026-01-14
+  Average daily turnover (LKR)                   59,300   last 20 days to 2026-01-14
+  Amihud illiquidity (return per LKR 1m traded)  0.4033   last 29 days to 2026-01-14
+
 Findings
   [watch] valuation: High price to book. P/B of 5.00x is above 3x (absolute threshold; no sector benchmark yet).
   [watch] valuation: Price above the Graham number. Price 60 is above the Graham number 56.92.
+  [watch] liquidity: Thinly traded: treat prices and indicators with care. Because average daily turnover is LKR 59,300 (guide: at least LKR 250,000) (absolute threshold; no sector benchmark yet).
   [positive] valuation: Low earnings multiple. P/E of 5.0x is below 8x (absolute threshold; no sector benchmark yet).
   [positive] profitability: Margins widening. Profit grew 28.6% against revenue growth of 14.3%.
   [positive] growth: Revenue growing. Revenue grew 14.3% year on year.
