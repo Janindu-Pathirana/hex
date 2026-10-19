@@ -27,6 +27,7 @@ const (
 	DimDividends     = "dividends"
 	DimTechnical     = "technical"
 	DimLiquidity     = "liquidity"
+	DimMarket        = "market"
 	DimData          = "data quality"
 )
 
@@ -353,6 +354,10 @@ var rules = []rule{
 			fmt.Sprintf("The price fell %.0f%% from its peak within the stored history. Stored prices are not adjusted for splits, bonus issues or rights, so check the corporate actions.", -v*100), "max-drawdown")
 	}},
 	{"liquidity", DimLiquidity, liquidityRule},
+	{"market-trend", DimMarket, marketTrendRule},
+	{"rel-strength", DimMarket, relStrengthRule},
+	{"foreign-flow", DimMarket, foreignFlowRule},
+	{"stale-market", DimData, staleMarketRule},
 	{"thin-trading", DimData, func(c *ctx) *Finding {
 		n, ok := c.val("active-days-14")
 		if !ok || n >= activeMin {

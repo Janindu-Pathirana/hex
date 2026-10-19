@@ -46,8 +46,9 @@ type Snapshot struct {
 	AsOf   time.Time
 
 	series map[string][]Point
-	bars   []Bar // daily history of the stock, oldest first (see WithBars)
-	index  []Bar // daily history of the benchmark index
+	bars   []Bar       // daily history of the stock, oldest first (see WithBars)
+	index  []Bar       // daily history of the benchmark index
+	market []MarketDay // market-wide daily statistics, oldest first
 }
 
 // NewSnapshot groups rows into a series per field, newest period first. When

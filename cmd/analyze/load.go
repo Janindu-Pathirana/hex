@@ -65,8 +65,12 @@ func Load(ctx context.Context, db *store.DB, code string, now time.Time) (*analy
 	if err != nil {
 		return nil, fmt.Errorf("load index bars for ASPI: %w", err)
 	}
+	days, err := db.MarketDays(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load market days: %w", err)
+	}
 	snap := analysis.NewSnapshot(code, name, sector, price, shares, now, rows)
-	return snap.WithBars(barsFromStore(bars), indexFromStore(idx)), nil
+	return snap.WithBars(barsFromStore(bars), indexFromStore(idx)).WithMarket(marketFromStore(days)), nil
 }
 
 func barsFromStore(in []store.Bar) []analysis.Bar {
@@ -89,6 +93,19 @@ func indexFromStore(in []store.IndexBar) []analysis.Bar {
 			continue
 		}
 		out = append(out, analysis.Bar{Date: d, Close: b.Value})
+	}
+	return out
+}
+
+func marketFromStore(in []store.MarketDay) []analysis.MarketDay {
+	out := make([]analysis.MarketDay, 0, len(in))
+	for _, d := range in {
+		t, err := time.Parse("2006-01-02", d.Date)
+		if err != nil {
+			continue
+		}
+		out = append(out, analysis.MarketDay{Date: t, ASI: d.ASI, SPSL20: d.SPSL20, Turnover: d.Turnover,
+			ForeignBuy: d.ForeignBuy, ForeignSell: d.ForeignSell, Listed: d.Listed, Traded: d.Traded, PER: d.PER, DY: d.DY})
 	}
 	return out
 }

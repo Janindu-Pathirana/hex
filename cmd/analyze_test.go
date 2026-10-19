@@ -53,6 +53,15 @@ func seedAnalysis(t *testing.T) {
 		if err := tx.UpsertIndexBars(ctx, idx); err != nil {
 			return err
 		}
+		var days []store.MarketDay
+		for i := 0; i < 30; i++ {
+			days = append(days, store.MarketDay{Date: start.AddDate(0, 0, i).Format("2006-01-02"),
+				ASI: 20000 + 10*float64(i), SPSL20: 5800 + 4*float64(i), Turnover: 100e6,
+				ForeignBuy: 56e6, ForeignSell: 50e6, Listed: 290, Traded: 110, PER: 9.4, DY: 3.1})
+		}
+		if err := tx.UpsertMarketDays(ctx, days); err != nil {
+			return err
+		}
 		return tx.UpsertFundamentals(ctx, []store.Fundamental{
 			row("2025-03-31", "12M", "revenue", 1000), row("2025-12-31", "9M", "revenue", 800), row("2024-12-31", "9M", "revenue", 700),
 			row("2025-03-31", "12M", "pat_parent", 100), row("2025-12-31", "9M", "pat_parent", 90), row("2024-12-31", "9M", "pat_parent", 70),

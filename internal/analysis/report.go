@@ -67,19 +67,19 @@ func coverage(s *Snapshot, m Metrics) Coverage {
 
 const groupTechnical = "technical"
 
-var groupOrder = []string{"valuation", "profitability", "growth", "health", "cashflow", "income", groupTechnical, groupLiquidity}
+var groupOrder = []string{"valuation", "profitability", "growth", "health", "cashflow", "income", groupTechnical, groupLiquidity, groupMarket}
 
 var groupTitle = map[string]string{
 	"valuation": "Valuation", "profitability": "Profitability", "growth": "Growth",
 	"health": "Financial health", "cashflow": "Cash flow", "income": "Dividends",
-	groupTechnical: "Price and volume", groupLiquidity: "Liquidity",
+	groupTechnical: "Price and volume", groupLiquidity: "Liquidity", groupMarket: "Market context",
 }
 
 // groupDimension maps a metric group to the finding dimension that covers it.
 var groupDimension = map[string]string{
 	"valuation": DimValuation, "profitability": DimProfitability, "growth": DimGrowth,
 	"health": DimHealth, "cashflow": DimCash, "income": DimDividends,
-	groupTechnical: DimTechnical, groupLiquidity: DimLiquidity,
+	groupTechnical: DimTechnical, groupLiquidity: DimLiquidity, groupMarket: DimMarket,
 }
 
 // Sections lists the names accepted by Filter.

@@ -73,6 +73,18 @@ Liquidity
   Average daily turnover (LKR)                   59,300   last 20 days to 2026-01-14
   Amihud illiquidity (return per LKR 1m traded)  0.4033   last 29 days to 2026-01-14
 
+Market context
+  ASPI return 1 month                        n/m     needs ASPI history from 2025-12-14; 30 market days stored
+  ASPI return 3 months                       n/m     needs ASPI history from 2025-10-14; 30 market days stored
+  ASPI vs its 50-day average                 n/m     needs 50 ASPI levels; 30 market days stored
+  ASPI volatility 20 days (annualised)       0.00%   as of 2026-01-14
+  Return vs S&P SL20, 3 months               n/m     needs stock and S&P SL20 history from 2025-10-14; 30 market days stored
+  Market turnover vs 20-day average          1.00x   as of 2026-01-14
+  Foreign net flow, 20 days (% of turnover)  +6.00%  last 20 days to 2026-01-14
+  Share of listed securities traded          37.93%  as of 2026-01-14
+  Market P/E (CSE)                           9.40x   as of 2026-01-14
+  Market dividend yield (CSE, %)             3.10    as of 2026-01-14
+
 Findings
   [watch] valuation: High price to book. P/B of 5.00x is above 3x (absolute threshold; no sector benchmark yet).
   [watch] valuation: Price above the Graham number. Price 60 is above the Graham number 56.92.
@@ -81,11 +93,15 @@ Findings
   [positive] profitability: Margins widening. Profit grew 28.6% against revenue growth of 14.3%.
   [positive] growth: Revenue growing. Revenue grew 14.3% year on year.
   [positive] growth: Profit growing. Profit grew 28.6% year on year.
+  [positive] market: Foreign investors net buying. Foreign net buying was +6.00% of market turnover over 20 days. This is market-wide, not this stock.
   [neutral] profitability: Moderate return on equity. ROE of 10.9%.
   [neutral] technical: RSI in a middle range. RSI of 60 is between 30 and 70.
 
 Coverage: 5 stored fields used
 Not computed:
+  aspi-return-1m: needs ASPI history from 2025-12-14; 30 market days stored
+  aspi-return-3m: needs ASPI history from 2025-10-14; 30 market days stored
+  aspi-vs-sma-50: needs 50 ASPI levels; 30 market days stored
   cash-conversion: missing: Net cash from operating activities (LKR)
   current-ratio: missing: Current assets (LKR); Current liabilities (LKR)
   debt-equity: missing: Interest-bearing debt (LKR); Total equity (LKR)
@@ -103,6 +119,7 @@ Not computed:
   price-vs-sma-50: needs 50 bars; 30 bars stored
   rel-strength-1y: needs stock and ASPI history from 2025-01-14; 30 bars stored
   rel-strength-3m: needs stock and ASPI history from 2025-10-14; 30 bars stored
+  rel-strength-spsl20-3m: needs stock and S&P SL20 history from 2025-10-14; 30 market days stored
   return-1m: needs history from 2025-12-14; 30 bars stored
   return-1y: needs history from 2025-01-14; 30 bars stored
   return-3m: needs history from 2025-10-14; 30 bars stored

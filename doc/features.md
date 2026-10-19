@@ -53,6 +53,10 @@ From stored daily bars, shown in the `technical` section: returns 1W/1M/3M/YTD/1
 
 From the same bars, in the `liquidity` section: share of days traded (volume > 0) and share of days with an unchanged close over the last 60 days (fewer if history is short, minimum 20 bars), average daily turnover over 20 days (close x volume, LKR), and Amihud illiquidity (mean |return| per LKR 1m traded). A stored volume of 0 counts as no trade. The `liquidity` finding is the gate: watch below 50% traded days or LKR 250,000 average turnover (absolute thresholds).
 
+### Market context (`market.go`)
+
+From the stored daily market summary (`market_daily`), in the `market` section: ASPI return over 1 and 3 months, ASPI against its 50-day average, ASPI volatility (20 days, annualised), the stock's 3-month return against the S&P SL20, market turnover against its 20-day average, foreign net flow over 20 days as a share of turnover, share of listed securities traded, and the CSE's market P/E and dividend yield. Findings: market trend, ahead of/behind the S&P SL20 (10 points), foreign net buying/selling (5% of turnover; market-wide, not this stock), stale market data. The market PER/DY units are as reported by the CSE and not verified.
+
 ## 3. Rule findings (`rules.go`)
 
 Severity levels: positive, neutral, watch, risk. Thresholds are absolute (no sector benchmark yet).
@@ -66,10 +70,11 @@ Severity levels: positive, neutral, watch, risk. Thresholds are absolute (no sec
 | Cash flow | cash conversion (<0, <0.5, ≥1), free cash flow sign |
 | Dividends | payout above 100% |
 | Technical | RSI zones (30/70), price vs SMA 50/200 and their order, MACD vs signal, near 52-week high/low, volatility >50%, drawdown <-30% |
+| Market | trend, relative strength vs S&P SL20, foreign flow |
 | Liquidity | gate: thinly traded / trades most days |
 | Data quality | low confidence (<0.7), stale (>200 days), no price, thinly traded (<10 price changes in 14 days), stale price history (>10 days) |
 
-Report sections: valuation, profitability, growth, health, cashflow, income, technical (price and volume), liquidity. Output as text or JSON, with a coverage line and an informational-not-advice disclaimer.
+Report sections: valuation, profitability, growth, health, cashflow, income, technical (price and volume), liquidity, market (context). Output as text or JSON, with a coverage line and an informational-not-advice disclaimer.
 
 ## 4. Data collection
 
@@ -127,7 +132,7 @@ Cache location: `os.UserCacheDir()/hex/` (macOS `~/Library/Caches/hex/`), writes
 
 ## 9. Stored but unused
 
-`hex analyze` now reads `price_bars` and the ASPI rows of `index_bars`. Nothing reads these yet: `market_daily`, `quote_stats`, `directors`, `corporate_actions`, other index rows. They are the raw material for the prediction work.
+`hex analyze` now reads `price_bars`, the ASPI rows of `index_bars` and `market_daily`. Nothing reads these yet: `quote_stats`, `directors`, `corporate_actions`, other index rows. They are the raw material for the prediction work.
 
 ## 10. Known gaps
 
