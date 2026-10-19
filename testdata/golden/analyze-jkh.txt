@@ -32,9 +32,10 @@ Growth
   Profit growth change   n/m     needs three comparable years of pat_parent
 
 Financial health
-  Current ratio   -  missing: Current assets (LKR); Current liabilities (LKR)
-  Debt to equity  -  missing: Interest-bearing debt (LKR); Total equity (LKR)
-  Interest cover  -  missing: Operating profit (LKR); Finance cost, as a positive amount (LKR)
+  Current ratio      -    missing: Current assets (LKR); Current liabilities (LKR)
+  Debt to equity     -    missing: Interest-bearing debt (LKR); Total equity (LKR)
+  Interest cover     -    missing: Operating profit (LKR); Finance cost, as a positive amount (LKR)
+  Piotroski F-score  n/m  only 3 of 8 tests could be computed (need 5): Operating cash flow is positive; Cash flow is above profit; Leverage is falling; Current ratio is rising; Gross margin is rising
 
 Cash flow
   Cash conversion  -  missing: Net cash from operating activities (LKR)
@@ -127,6 +128,7 @@ Not computed:
   operating-margin-change: needs operating_profit for this period and the same period a year earlier
   operating-margin: missing: Operating profit (LKR)
   payout: missing: Dividends per share, last 12 months (LKR)
+  piotroski: only 3 of 8 tests could be computed (need 5): Operating cash flow is positive; Cash flow is above profit; Leverage is falling; Current ratio is rising; Gross margin is rising
   price-vs-sma-200: needs 200 bars; 30 bars stored
   price-vs-sma-50: needs 50 bars; 30 bars stored
   profit-growth-change: needs three comparable years of pat_parent

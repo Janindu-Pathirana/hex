@@ -356,6 +356,7 @@ var rules = []rule{
 	{"margin-trend", DimProfitability, marginTrendRule},
 	{"growth-accel", DimGrowth, growthAccelRule},
 	{"fcf-yield", DimCash, fcfYieldRule},
+	{"piotroski", DimHealth, piotroskiRule},
 	{"liquidity", DimLiquidity, liquidityRule},
 	{"market-trend", DimMarket, marketTrendRule},
 	{"rel-strength", DimMarket, relStrengthRule},
