@@ -45,6 +45,10 @@ Command notes:
 - `Snapshot` builds TTM (YTD + last full year − prior YTD), YoY, average balances; flags stale data and mismatched periods.
 - Every metric carries steps, confidence (lowest input), sources and missing inputs.
 
+### Trends and yields (`trends.go`)
+
+Compared with the same period a year earlier (same period type, so interim figures are never set against full years): gross, operating and net margin change and ROE change, in percentage points; revenue and profit growth change (this year's growth less last year's, which needs three comparable years). Also free cash flow yield (TTM operating cash flow less capex, over market cap) and asset turnover (TTM revenue over closing total assets). Margins and asset turnover are skipped for banks, finance and insurance. Findings: net margin improving/slipping (1 point), revenue growth speeding up/slowing (10 points), high free cash flow yield (8%).
+
 ### Technical indicators (`technical.go`)
 
 From stored daily bars, shown in the `technical` section: returns 1W/1M/3M/YTD/1Y, SMA 20/50/200 and price vs SMA, EMA 12/26, RSI 14 (Wilder), MACD 12/26/9, Bollinger %B, ATR 14 (falls back to close-to-close when high/low are missing), volatility 20d and 1Y (annualised with 240 days), max drawdown with peak/trough dates, distance from 52-week high/low, volume vs 20-day average, return vs ASPI 3M/1Y, days with a price change in the last 14. Indicators that lack history show what they need. Prices are not adjusted for splits, bonus or rights.
