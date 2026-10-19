@@ -49,6 +49,10 @@ Command notes:
 
 Compared with the same period a year earlier (same period type, so interim figures are never set against full years): gross, operating and net margin change and ROE change, in percentage points; revenue and profit growth change (this year's growth less last year's, which needs three comparable years). Also free cash flow yield (TTM operating cash flow less capex, over market cap) and asset turnover (TTM revenue over closing total assets). Margins and asset turnover are skipped for banks, finance and insurance. Findings: net margin improving/slipping (1 point), revenue growth speeding up/slowing (10 points), high free cash flow yield (8%).
 
+### Piotroski F-score (`piotroski.go`)
+
+A financial-strength screen shown in the Financial health section. Eight tests, one point each, comparing the latest period with the same period a year earlier: profit positive, operating cash flow positive, return on assets rising, cash flow above profit, leverage (liabilities over assets) falling, current ratio rising, gross margin rising, asset turnover rising. The ninth original test (no new shares issued) cannot be computed because no share-count history is stored. A test counts only when its inputs are stored; fewer than 5 computable tests gives no score and says what is missing. Display is `points of computable tests`. Skipped for banks, finance and insurance. Finding: passes most (75%+), mixed, or fails most (37.5% or less).
+
 ### Technical indicators (`technical.go`)
 
 From stored daily bars, shown in the `technical` section: returns 1W/1M/3M/YTD/1Y, SMA 20/50/200 and price vs SMA, EMA 12/26, RSI 14 (Wilder), MACD 12/26/9, Bollinger %B, ATR 14 (falls back to close-to-close when high/low are missing), volatility 20d and 1Y (annualised with 240 days), max drawdown with peak/trough dates, distance from 52-week high/low, volume vs 20-day average, return vs ASPI 3M/1Y, days with a price change in the last 14. Indicators that lack history show what they need. Prices are not adjusted for splits, bonus or rights.

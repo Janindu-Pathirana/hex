@@ -38,7 +38,8 @@ Legend: `[ ]` open, `[x]` done. Each task ends with "Done when".
 ## P4: Fundamental extensions
 - [x] Margin and ROE trends (change in percentage points against the same period a year earlier) and growth acceleration (`internal/analysis/trends.go`). ROE change uses the period's profit on closing equity, not annualised.
 - [ ] ROIC, EV/EBITDA. (Asset turnover on closing assets and FCF yield are done in `trends.go`.)
-- [ ] Piotroski F-score, Altman Z, Beneish M-score, accruals. [fundamental-analysis]
+- [x] Piotroski F-score (`internal/analysis/piotroski.go`): eight of the nine tests; the ninth (no new shares) needs share-count history that is not stored.
+- [ ] Altman Z, Beneish M-score, accruals ratio. Need fields the extractor does not read yet (retained earnings, receivables, SG&A, depreciation). [fundamental-analysis, pdf-extraction]
 - [ ] Earnings surprise (SUE vs same quarter last year).
 - [ ] Sector-relative z-scores.
 - [ ] **Bank rules**: NIM, NPL, capital adequacy, LDR, cost/income, provision coverage (extend `extract.Fields`). [pdf-extraction]

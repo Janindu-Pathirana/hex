@@ -21,7 +21,7 @@ go build -ldflags "-X github.com/Janindu-Pathirana/hex/cmd.Version=0.1.0" -o hex
 | `cmd/<group>.go` | Cobra wiring for a group: `new<Group>Cmd(a *app)` constructors, flags (`company.go`, `sync.go`, `reports.go`, `fundamentals.go`, `clean.go`, `version.go`) |
 | `cmd/analyze.go`, `cmd/analyze/` | `hex analyze <SYMBOL>`: reads only the store (`analyze.Load` builds the `Snapshot`), prints the report as text or `--json`, `--section` filters |
 | `cmd/calc.go` | `hex calc <ratio>`: one subcommand generated per `analysis.Registry` entry, `hex calc list` |
-| `internal/analysis/` | Pure ratio engine (`trends.go` adds year-on-year margin/ROE/growth changes, FCF yield, asset turnover): `Registry` of `Ratio{Inputs, Formula, Compute}` returning `Result{Value, Display, Steps}`. `Snapshot` (period series, TTM, YoY) → `Compute` (metrics) → `Evaluate` (rule findings) → `Report` (`Analyze`, `Render`, `Filter`). No I/O, no LLM |
+| `internal/analysis/` | Pure ratio engine (`trends.go` adds year-on-year margin/ROE/growth changes, FCF yield, asset turnover; `piotroski.go` the F-score): `Registry` of `Ratio{Inputs, Formula, Compute}` returning `Result{Value, Display, Steps}`. `Snapshot` (period series, TTM, YoY) → `Compute` (metrics) → `Evaluate` (rule findings) → `Report` (`Analyze`, `Render`, `Filter`). No I/O, no LLM |
 | `cmd/args.go` | Shared symbol completion (`ValidArgsFunction`) and legacy flag-name normalisation |
 | `cmd/<group>/` | Logic for that group (`cmd/company/`: cached securities, symbol resolution, report views) |
 | `internal/cse/` | cse.lk client: `Client{BaseURL, SiteURL, CDNBase, HTTP, DownloadHTTP, Observe}`, `post`/`get` with retries and size caps, one method per endpoint, `DownloadPDF`, `ErrNoData`, `ErrUnknownSymbol`, `Resolve` |
