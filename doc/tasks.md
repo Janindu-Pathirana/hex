@@ -36,8 +36,8 @@ Legend: `[ ]` open, `[x]` done. Each task ends with "Done when".
 - [ ] Sector and market benchmarks to replace absolute thresholds in `rules.go`.
 
 ## P4: Fundamental extensions
-- [ ] Margin and ROE trends (YoY bps change), growth acceleration.
-- [ ] ROIC, asset turnover, EV/EBITDA, FCF yield.
+- [x] Margin and ROE trends (change in percentage points against the same period a year earlier) and growth acceleration (`internal/analysis/trends.go`). ROE change uses the period's profit on closing equity, not annualised.
+- [ ] ROIC, EV/EBITDA. (Asset turnover on closing assets and FCF yield are done in `trends.go`.)
 - [ ] Piotroski F-score, Altman Z, Beneish M-score, accruals. [fundamental-analysis]
 - [ ] Earnings surprise (SUE vs same quarter last year).
 - [ ] Sector-relative z-scores.
