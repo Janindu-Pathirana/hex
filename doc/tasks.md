@@ -30,9 +30,9 @@ Legend: `[ ]` open, `[x]` done. Each task ends with "Done when".
 ## P3: Liquidity and market context
 - [x] Traded-days ratio, zero-return days, Amihud illiquidity, average turnover (`internal/analysis/liquidity.go`, `--section liquidity`). Turnover is estimated as close x volume.
 - [x] **Liquidity gate**: finding `liquidity` (watch below 50% traded days or LKR 250,000 average turnover). Not yet used to block scoring, since there is no score yet.
-- [ ] Relative strength vs ASPI, S&P SL20 and sector index.
-- [ ] Market breadth, market volatility and turnover regimes (from `market_daily`, `index_bars`).
-- [ ] Foreign flow features from `market_daily`.
+- [x] Relative strength vs ASPI (technical section) and vs S&P SL20 (market section). Sector index still open: needs a verified sector-name to index-id mapping.
+- [x] Market context from `market_daily`: ASPI trend and volatility, turnover vs 20-day average, share of securities traded. Advancers/decliners breadth still open (the data has only listed and traded counts).
+- [x] Foreign net flow over 20 days as % of market turnover (market-wide, not per stock).
 - [ ] Sector and market benchmarks to replace absolute thresholds in `rules.go`.
 
 ## P4: Fundamental extensions

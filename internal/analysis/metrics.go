@@ -206,7 +206,8 @@ func Compute(s *Snapshot) Metrics {
 
 	list := append(b.out, computeTrends(s, b.fin, profitField, revField)...)
 	list = append(list, computeTechnical(s)...)
-	return Metrics{List: append(list, computeLiquidity(s)...)}
+	list = append(list, computeLiquidity(s)...)
+	return Metrics{List: append(list, computeMarket(s)...)}
 }
 
 func (x *src) setOK(key string, v float64, ok bool) *src {

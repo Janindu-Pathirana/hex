@@ -27,6 +27,7 @@ const (
 	DimDividends     = "dividends"
 	DimTechnical     = "technical"
 	DimLiquidity     = "liquidity"
+	DimMarket        = "market"
 	DimData          = "data quality"
 )
 
@@ -356,6 +357,10 @@ var rules = []rule{
 	{"growth-accel", DimGrowth, growthAccelRule},
 	{"fcf-yield", DimCash, fcfYieldRule},
 	{"liquidity", DimLiquidity, liquidityRule},
+	{"market-trend", DimMarket, marketTrendRule},
+	{"rel-strength", DimMarket, relStrengthRule},
+	{"foreign-flow", DimMarket, foreignFlowRule},
+	{"stale-market", DimData, staleMarketRule},
 	{"thin-trading", DimData, func(c *ctx) *Finding {
 		n, ok := c.val("active-days-14")
 		if !ok || n >= activeMin {
