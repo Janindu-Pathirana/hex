@@ -205,6 +205,7 @@ func Compute(s *Snapshot) Metrics {
 	b.emit("peg", "peg", "", x, "")
 
 	list := append(b.out, computeTrends(s, b.fin, profitField, revField)...)
+	list = append(list, computePiotroski(s, b.fin, profitField, revField)...)
 	list = append(list, computeTechnical(s)...)
 	list = append(list, computeLiquidity(s)...)
 	return Metrics{List: append(list, computeMarket(s)...)}
