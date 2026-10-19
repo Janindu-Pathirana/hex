@@ -28,8 +28,8 @@ Legend: `[ ]` open, `[x]` done. Each task ends with "Done when".
 - Known limit: stored prices are not adjusted for splits, bonus or rights (P1), so returns and drawdown can jump on corporate actions.
 
 ## P3: Liquidity and market context
-- [ ] Traded-days ratio, zero-return days, Amihud illiquidity, average turnover.
-- [ ] **Liquidity gate**: mark symbols too illiquid to score; surface as a finding.
+- [x] Traded-days ratio, zero-return days, Amihud illiquidity, average turnover (`internal/analysis/liquidity.go`, `--section liquidity`). Turnover is estimated as close x volume.
+- [x] **Liquidity gate**: finding `liquidity` (watch below 50% traded days or LKR 250,000 average turnover). Not yet used to block scoring, since there is no score yet.
 - [ ] Relative strength vs ASPI, S&P SL20 and sector index.
 - [ ] Market breadth, market volatility and turnover regimes (from `market_daily`, `index_bars`).
 - [ ] Foreign flow features from `market_daily`.

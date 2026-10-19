@@ -49,6 +49,10 @@ Command notes:
 
 From stored daily bars, shown in the `technical` section: returns 1W/1M/3M/YTD/1Y, SMA 20/50/200 and price vs SMA, EMA 12/26, RSI 14 (Wilder), MACD 12/26/9, Bollinger %B, ATR 14 (falls back to close-to-close when high/low are missing), volatility 20d and 1Y (annualised with 240 days), max drawdown with peak/trough dates, distance from 52-week high/low, volume vs 20-day average, return vs ASPI 3M/1Y, days with a price change in the last 14. Indicators that lack history show what they need. Prices are not adjusted for splits, bonus or rights.
 
+### Liquidity (`liquidity.go`)
+
+From the same bars, in the `liquidity` section: share of days traded (volume > 0) and share of days with an unchanged close over the last 60 days (fewer if history is short, minimum 20 bars), average daily turnover over 20 days (close x volume, LKR), and Amihud illiquidity (mean |return| per LKR 1m traded). A stored volume of 0 counts as no trade. The `liquidity` finding is the gate: watch below 50% traded days or LKR 250,000 average turnover (absolute thresholds).
+
 ## 3. Rule findings (`rules.go`)
 
 Severity levels: positive, neutral, watch, risk. Thresholds are absolute (no sector benchmark yet).
@@ -62,9 +66,10 @@ Severity levels: positive, neutral, watch, risk. Thresholds are absolute (no sec
 | Cash flow | cash conversion (<0, <0.5, ≥1), free cash flow sign |
 | Dividends | payout above 100% |
 | Technical | RSI zones (30/70), price vs SMA 50/200 and their order, MACD vs signal, near 52-week high/low, volatility >50%, drawdown <-30% |
+| Liquidity | gate: thinly traded / trades most days |
 | Data quality | low confidence (<0.7), stale (>200 days), no price, thinly traded (<10 price changes in 14 days), stale price history (>10 days) |
 
-Report sections: valuation, profitability, growth, health, cashflow, income, technical (price and volume). Output as text or JSON, with a coverage line and an informational-not-advice disclaimer.
+Report sections: valuation, profitability, growth, health, cashflow, income, technical (price and volume), liquidity. Output as text or JSON, with a coverage line and an informational-not-advice disclaimer.
 
 ## 4. Data collection
 
