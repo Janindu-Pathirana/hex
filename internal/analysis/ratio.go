@@ -16,6 +16,9 @@ const (
 	Percent Unit = "percent" // 0.12 → "12.00%"
 	Times   Unit = "times"   // 8 → "8.00x"
 	LKR     Unit = "lkr"     // 1234.5 → "1,234.50"
+	Points  Unit = "points"  // 61.234 → "61.23" (indicator readings such as RSI)
+	Change  Unit = "change"  // 0.0281 → "+2.81%", signed
+	Count   Unit = "count"   // 9 → "9"
 )
 
 // Input is one number a ratio needs. Key is shared with stored fundamentals.
@@ -112,6 +115,19 @@ func Format(v float64, u Unit) string {
 		return strconv.FormatFloat(v*100, 'f', 2, 64) + "%"
 	case Times:
 		return strconv.FormatFloat(v, 'f', 2, 64) + "x"
+	case Points:
+		return strconv.FormatFloat(v, 'f', 2, 64)
+	case Change:
+		s := strconv.FormatFloat(v*100, 'f', 2, 64)
+		if s != "0.00" && s != "-0.00" && v > 0 {
+			s = "+" + s
+		}
+		if s == "-0.00" {
+			s = "0.00"
+		}
+		return s + "%"
+	case Count:
+		return strconv.FormatFloat(v, 'f', 0, 64)
 	default:
 		return Num(v)
 	}

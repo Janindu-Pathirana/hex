@@ -204,7 +204,7 @@ func Compute(s *Snapshot) Metrics {
 	}
 	b.emit("peg", "peg", "", x, "")
 
-	return Metrics{List: b.out}
+	return Metrics{List: append(b.out, computeTechnical(s)...)}
 }
 
 func (x *src) setOK(key string, v float64, ok bool) *src {

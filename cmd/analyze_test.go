@@ -36,6 +36,23 @@ func seedAnalysis(t *testing.T) {
 		if err := tx.UpsertQuotes(ctx, []store.Quote{{Code: "JKH.N0000", Price: 60}}); err != nil {
 			return err
 		}
+		// 30 daily bars ending 2026-01-14: a zigzag drifting up, 4 days short of
+		// the history SMA 50 and the one-year figures need.
+		var bars []store.Bar
+		var idx []store.IndexBar
+		start := time.Date(2025, 12, 16, 0, 0, 0, 0, time.UTC)
+		for i := 0; i < 30; i++ {
+			d := start.AddDate(0, 0, i).Format("2006-01-02")
+			c := 55 + float64(i)/6 + float64(i%3)
+			bars = append(bars, store.Bar{Date: d, Close: c, Volume: 1000})
+			idx = append(idx, store.IndexBar{IndexID: "ASPI", Date: d, Value: 20000 + 10*float64(i)})
+		}
+		if err := tx.MergeBars(ctx, "JKH.N0000", bars); err != nil {
+			return err
+		}
+		if err := tx.UpsertIndexBars(ctx, idx); err != nil {
+			return err
+		}
 		return tx.UpsertFundamentals(ctx, []store.Fundamental{
 			row("2025-03-31", "12M", "revenue", 1000), row("2025-12-31", "9M", "revenue", 800), row("2024-12-31", "9M", "revenue", 700),
 			row("2025-03-31", "12M", "pat_parent", 100), row("2025-12-31", "9M", "pat_parent", 90), row("2024-12-31", "9M", "pat_parent", 70),

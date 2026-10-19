@@ -2,6 +2,7 @@ package analysis
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -24,6 +25,7 @@ const (
 	DimHealth        = "financial health"
 	DimCash          = "cash flow"
 	DimDividends     = "dividends"
+	DimTechnical     = "technical"
 	DimData          = "data quality"
 )
 
@@ -45,6 +47,12 @@ const (
 	payoutHigh    = 1.0
 	staleDays     = 200
 	lowConfidence = 0.7 // matches reportjobs.LowConfidence
+
+	rsiHigh      = 70.0
+	rsiLow       = 30.0
+	nearRange    = 0.05  // within 5% of the 52-week high or low
+	volHigh      = 0.50  // annualised volatility
+	drawdownDeep = -0.30 // fall from the peak
 )
 
 // Evidence is one figure a finding rests on.
@@ -256,6 +264,113 @@ var rules = []rule{
 		}
 		return c.find("payout", DimDividends, Neutral, "Dividend covered by earnings",
 			fmt.Sprintf("Payout of %.0f%% of EPS.", po*100), "payout", "dividend-yield")
+	}},
+	{"rsi", DimTechnical, func(c *ctx) *Finding {
+		v, ok := c.val("rsi-14")
+		switch {
+		case !ok:
+			return nil
+		case v > rsiHigh:
+			return c.find("rsi", DimTechnical, Watch, "RSI in the overbought zone",
+				fmt.Sprintf("RSI of %.0f is above %.0f; the price has risen fast over recent days.", v, rsiHigh), "rsi-14")
+		case v < rsiLow:
+			return c.find("rsi", DimTechnical, Watch, "RSI in the oversold zone",
+				fmt.Sprintf("RSI of %.0f is below %.0f; the price has fallen fast over recent days.", v, rsiLow), "rsi-14")
+		}
+		return c.find("rsi", DimTechnical, Neutral, "RSI in a middle range",
+			fmt.Sprintf("RSI of %.0f is between %.0f and %.0f.", v, rsiLow, rsiHigh), "rsi-14")
+	}},
+	{"trend", DimTechnical, func(c *ctx) *Finding {
+		v50, ok50 := c.val("price-vs-sma-50")
+		v200, ok200 := c.val("price-vs-sma-200")
+		switch {
+		case ok50 && ok200:
+			s50, _ := c.val("sma-50")
+			s200, _ := c.val("sma-200")
+			cross := "SMA 50 is below SMA 200"
+			if s50 > s200 {
+				cross = "SMA 50 is above SMA 200"
+			}
+			sev := Neutral
+			if v50 > 0 && v200 > 0 {
+				sev = Positive
+			} else if v50 < 0 && v200 < 0 {
+				sev = Watch
+			}
+			return c.find("trend", DimTechnical, sev, "Price against its moving averages",
+				fmt.Sprintf("Price is %s against SMA 50 and %s against SMA 200; %s.", Format(v50, Change), Format(v200, Change), cross),
+				"price-vs-sma-50", "price-vs-sma-200")
+		case ok50:
+			return c.find("trend", DimTechnical, Neutral, "Price against its 50-day average",
+				fmt.Sprintf("Price is %s against SMA 50 (not enough history for SMA 200).", Format(v50, Change)), "price-vs-sma-50")
+		}
+		return nil
+	}},
+	{"macd", DimTechnical, func(c *ctx) *Finding {
+		h, ok := c.val("macd-hist")
+		if !ok {
+			return nil
+		}
+		if math.Abs(h) < 1e-9 {
+			return c.find("macd", DimTechnical, Neutral, "MACD level with its signal line",
+				"Short-term momentum matches the 9-day average of itself.", "macd", "macd-signal", "macd-hist")
+		}
+		if h > 0 {
+			return c.find("macd", DimTechnical, Positive, "MACD above its signal line",
+				"Short-term momentum is stronger than the 9-day average of itself.", "macd", "macd-signal", "macd-hist")
+		}
+		return c.find("macd", DimTechnical, Watch, "MACD below its signal line",
+			"Short-term momentum is weaker than the 9-day average of itself.", "macd", "macd-signal", "macd-hist")
+	}},
+	{"range", DimTechnical, func(c *ctx) *Finding {
+		fh, okh := c.val("from-high-52w")
+		fl, okl := c.val("from-low-52w")
+		switch {
+		case okh && fh >= -nearRange:
+			return c.find("range", DimTechnical, Neutral, "Near the 52-week high",
+				fmt.Sprintf("Close is within %.0f%% of the highest close in a year.", nearRange*100), "from-high-52w")
+		case okl && fl <= nearRange:
+			return c.find("range", DimTechnical, Watch, "Near the 52-week low",
+				fmt.Sprintf("Close is within %.0f%% of the lowest close in a year.", nearRange*100), "from-low-52w")
+		}
+		return nil
+	}},
+	{"volatility", DimTechnical, func(c *ctx) *Finding {
+		v, ok := c.val("volatility-1y")
+		if !ok || v < volHigh {
+			return nil
+		}
+		return c.find("volatility", DimTechnical, Watch, "High volatility",
+			fmt.Sprintf("Annualised volatility of %.0f%% is above %.0f%%.", v*100, volHigh*100), "volatility-1y")
+	}},
+	{"drawdown", DimTechnical, func(c *ctx) *Finding {
+		v, ok := c.val("max-drawdown")
+		if !ok || v > drawdownDeep {
+			return nil
+		}
+		return c.find("drawdown", DimTechnical, Watch, "Deep fall from a past peak",
+			fmt.Sprintf("The price fell %.0f%% from its peak within the stored history. Stored prices are not adjusted for splits, bonus issues or rights, so check the corporate actions.", -v*100), "max-drawdown")
+	}},
+	{"thin-trading", DimData, func(c *ctx) *Finding {
+		n, ok := c.val("active-days-14")
+		if !ok || n >= activeMin {
+			return nil
+		}
+		return &Finding{ID: "thin-trading", Dimension: DimData, Severity: Watch, Title: "Thinly traded",
+			Detail:   fmt.Sprintf("The close changed on only %.0f of the last %d days, so indicators may rest on stale prices.", n, activeWindow),
+			Evidence: c.ev("active-days-14")}
+	}},
+	{"stale-prices", DimData, func(c *ctx) *Finding {
+		if len(c.s.bars) == 0 {
+			return nil
+		}
+		last := c.s.bars[len(c.s.bars)-1].Date
+		days := int(c.s.AsOf.Sub(last).Hours() / 24)
+		if days <= staleBarsDays {
+			return nil
+		}
+		return &Finding{ID: "stale-prices", Dimension: DimData, Severity: Watch, Title: "Price history is out of date",
+			Detail: fmt.Sprintf("The newest stored bar is %s, %d days ago. Run 'hex sync history'.", last.Format(dateLayout), days)}
 	}},
 	{"low-confidence", DimData, func(c *ctx) *Finding {
 		var low []string
