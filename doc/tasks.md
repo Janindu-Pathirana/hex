@@ -16,15 +16,16 @@ Legend: `[ ]` open, `[x]` done. Each task ends with "Done when".
 - [ ] **Holiday-aware market-open calendar** for TTLs and gaps. [cse-market-context]
 - [ ] **Tests** with fixtures for each action type. [go-testing]
 
-## P2: Technical indicators (`internal/analysis/indicators.go`)
-- [ ] SMA / EMA (20, 50, 200), price vs MA, cross state. [technical-analysis]
-- [ ] RSI, stochastic, MACD, Bollinger, ATR.
-- [ ] Momentum 1/3/6/12 and 12-1; mean-reversion z-score.
-- [ ] Realised volatility, downside deviation, max drawdown.
-- [ ] Volume features: volume vs average, OBV, spikes.
-- [ ] Beta and correlation vs ASPI and S&P SL20 (rolling, from `price_bars` + `index_bars`).
-- [ ] `hex analyze --section technical` (text and `--json`); minimum-history guard; golden files.
-- [ ] Done when: indicators match a reference implementation on a fixture within tolerance.
+## P2: Technical indicators (`internal/analysis/technical.go`)
+- [x] SMA / EMA (20, 50, 200 / 12, 26), price vs SMA 50 and 200, trend finding. [technical-analysis] SMA cross date not reported yet.
+- [x] RSI 14, MACD 12/26/9, Bollinger %B, ATR 14 (stochastic still open).
+- [x] Returns 1W/1M/3M/YTD/1Y; relative strength vs ASPI 3M/1Y. 12-1 momentum and mean-reversion z-score still open.
+- [x] Realised volatility (20d, 1Y), max drawdown. Downside deviation still open.
+- [x] Volume vs 20-day average. OBV and spike detection still open.
+- [ ] Beta and correlation vs ASPI and S&P SL20 (rolling, from `price_bars` + `index_bars`). `quote_stats` still holds CSE's beta.
+- [x] `hex analyze --section technical` (text and `--json`); minimum-history guards; golden file.
+- [x] Done when: RSI, EMA and MACD matched an independent Python reference on a 120-bar series to 1e-4 (checked once, not kept as a fixture; add `testdata/indicators/` if you want it repeatable).
+- Known limit: stored prices are not adjusted for splits, bonus or rights (P1), so returns and drawdown can jump on corporate actions.
 
 ## P3: Liquidity and market context
 - [ ] Traded-days ratio, zero-return days, Amihud illiquidity, average turnover.

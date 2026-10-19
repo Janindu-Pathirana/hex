@@ -57,5 +57,38 @@ func Load(ctx context.Context, db *store.DB, code string, now time.Time) (*analy
 	if name == "" {
 		name = sec.Name
 	}
-	return analysis.NewSnapshot(code, name, sector, price, shares, now, rows), nil
+	bars, err := db.Bars(ctx, code, "", "")
+	if err != nil {
+		return nil, fmt.Errorf("load price bars for %s: %w", code, err)
+	}
+	idx, err := db.IndexBars(ctx, "ASPI")
+	if err != nil {
+		return nil, fmt.Errorf("load index bars for ASPI: %w", err)
+	}
+	snap := analysis.NewSnapshot(code, name, sector, price, shares, now, rows)
+	return snap.WithBars(barsFromStore(bars), indexFromStore(idx)), nil
+}
+
+func barsFromStore(in []store.Bar) []analysis.Bar {
+	out := make([]analysis.Bar, 0, len(in))
+	for _, b := range in {
+		d, err := time.Parse("2006-01-02", b.Date)
+		if err != nil {
+			continue
+		}
+		out = append(out, analysis.Bar{Date: d, High: b.High, Low: b.Low, Close: b.Close, Volume: b.Volume})
+	}
+	return out
+}
+
+func indexFromStore(in []store.IndexBar) []analysis.Bar {
+	out := make([]analysis.Bar, 0, len(in))
+	for _, b := range in {
+		d, err := time.Parse("2006-01-02", b.Date)
+		if err != nil {
+			continue
+		}
+		out = append(out, analysis.Bar{Date: d, Close: b.Value})
+	}
+	return out
 }

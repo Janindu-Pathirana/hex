@@ -45,6 +45,10 @@ Command notes:
 - `Snapshot` builds TTM (YTD + last full year − prior YTD), YoY, average balances; flags stale data and mismatched periods.
 - Every metric carries steps, confidence (lowest input), sources and missing inputs.
 
+### Technical indicators (`technical.go`)
+
+From stored daily bars, shown in the `technical` section: returns 1W/1M/3M/YTD/1Y, SMA 20/50/200 and price vs SMA, EMA 12/26, RSI 14 (Wilder), MACD 12/26/9, Bollinger %B, ATR 14 (falls back to close-to-close when high/low are missing), volatility 20d and 1Y (annualised with 240 days), max drawdown with peak/trough dates, distance from 52-week high/low, volume vs 20-day average, return vs ASPI 3M/1Y, days with a price change in the last 14. Indicators that lack history show what they need. Prices are not adjusted for splits, bonus or rights.
+
 ## 3. Rule findings (`rules.go`)
 
 Severity levels: positive, neutral, watch, risk. Thresholds are absolute (no sector benchmark yet).
@@ -57,9 +61,10 @@ Severity levels: positive, neutral, watch, risk. Thresholds are absolute (no sec
 | Health | current ratio (<1, ≥1.5), interest cover (<1.5, <3) |
 | Cash flow | cash conversion (<0, <0.5, ≥1), free cash flow sign |
 | Dividends | payout above 100% |
-| Data quality | low confidence (<0.7), stale (>200 days), no price |
+| Technical | RSI zones (30/70), price vs SMA 50/200 and their order, MACD vs signal, near 52-week high/low, volatility >50%, drawdown <-30% |
+| Data quality | low confidence (<0.7), stale (>200 days), no price, thinly traded (<10 price changes in 14 days), stale price history (>10 days) |
 
-Report sections: valuation, profitability, growth, health, cashflow, income. Output as text or JSON, with a coverage line and an informational-not-advice disclaimer.
+Report sections: valuation, profitability, growth, health, cashflow, income, technical (price and volume). Output as text or JSON, with a coverage line and an informational-not-advice disclaimer.
 
 ## 4. Data collection
 
@@ -117,11 +122,11 @@ Cache location: `os.UserCacheDir()/hex/` (macOS `~/Library/Caches/hex/`), writes
 
 ## 9. Stored but unused
 
-Nothing in `hex analyze` reads these yet: `price_bars`, `index_bars`, `market_daily`, `quote_stats`, `directors`, `corporate_actions`. They are the raw material for the prediction work.
+`hex analyze` now reads `price_bars` and the ASPI rows of `index_bars`. Nothing reads these yet: `market_daily`, `quote_stats`, `directors`, `corporate_actions`, other index rows. They are the raw material for the prediction work.
 
 ## 10. Known gaps
 
-- No technical indicators, benchmarks, scores, bank/insurer rules, or `--narrate`.
+- No sector/market benchmarks, scores, bank/insurer rules, or `--narrate`. Technical indicators exist but use unadjusted prices.
 - Corporate-action ex/record/payment dates never filled (detail endpoint unverified; `FinancialAnnouncements` client method unused).
 - `debt-equity` is in the registry but `analyze` never feeds it a debt input.
 - `company show-profile` / `show-financial` still hit cse.lk live.
@@ -138,7 +143,7 @@ Nothing in `hex analyze` reads these yet: `price_bars`, `index_bars`, `market_da
 | 1 | SQLite store and scrape engine | done (tables and global `--json` pending) |
 | 2 | Price history (accumulated daily bars) | done |
 | 3 | Corporate actions | announcements stored; dates and price adjustment pending |
-| 4 | Technical analysis | `hex analyze` fundamentals phase done; indicators, benchmarks, scores pending |
+| 4 | Technical analysis | fundamentals and price/volume indicators done; benchmarks, scores pending |
 | 5 | Fundamentals from PDFs | done (rules + opt-in LLM) |
 | 6 | CBSL macro | not started |
 | 7 | Screener, watchlist, portfolio, release | not started |
