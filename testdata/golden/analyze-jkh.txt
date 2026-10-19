@@ -10,18 +10,26 @@ Valuation
   Price to book (P/B)         5.00x   
   Graham number               56.92   
   PEG ratio                   0.18x   
+  Free cash flow yield        n/m     needs operating cash flow and capital expenditure
 
 Profitability
-  Return on equity (ROE)   10.91%  TTM to 2025-12-31
-  Return on assets (ROA)   4.36%   TTM to 2025-12-31
-  Gross profit margin      -       missing: Gross profit (LKR)
-  Operating profit margin  -       missing: Operating profit (LKR)
-  Net profit margin        10.91%  TTM to 2025-12-31
+  Return on equity (ROE)                        10.91%   TTM to 2025-12-31
+  Return on assets (ROA)                        4.36%    TTM to 2025-12-31
+  Gross profit margin                           -        missing: Gross profit (LKR)
+  Operating profit margin                       -        missing: Operating profit (LKR)
+  Net profit margin                             10.91%   TTM to 2025-12-31
+  Gross margin change                           n/m      needs gross_profit for this period and the same period a year earlier
+  Operating margin change                       n/m      needs operating_profit for this period and the same period a year earlier
+  Net margin change                             +1.25pp  9M to 2025-12-31 vs 2024-12-31
+  ROE change (period profit on closing equity)  +0.50pp  9M to 2025-12-31 vs 2024-12-31
+  Asset turnover (revenue on closing assets)    0.37x    TTM to 2025-12-31
 
 Growth
-  Revenue growth  14.29%  9M to 2025-12-31 vs 2024-12-31
-  Profit growth   28.57%  9M to 2025-12-31 vs 2024-12-31
-  EPS growth      28.57%  9M to 2025-12-31 vs 2024-12-31
+  Revenue growth         14.29%  9M to 2025-12-31 vs 2024-12-31
+  Profit growth          28.57%  9M to 2025-12-31 vs 2024-12-31
+  EPS growth             28.57%  9M to 2025-12-31 vs 2024-12-31
+  Revenue growth change  n/m     needs three comparable years of revenue
+  Profit growth change   n/m     needs three comparable years of pat_parent
 
 Financial health
   Current ratio   -  missing: Current assets (LKR); Current liabilities (LKR)
@@ -81,6 +89,7 @@ Findings
   [positive] profitability: Margins widening. Profit grew 28.6% against revenue growth of 14.3%.
   [positive] growth: Revenue growing. Revenue grew 14.3% year on year.
   [positive] growth: Profit growing. Profit grew 28.6% year on year.
+  [positive] profitability: Net margin improving. Net margin is 1.25pp higher than the same period a year earlier.
   [neutral] profitability: Moderate return on equity. ROE of 10.9%.
   [neutral] technical: RSI in a middle range. RSI of 60 is between 30 and 70.
 
@@ -90,22 +99,27 @@ Not computed:
   current-ratio: missing: Current assets (LKR); Current liabilities (LKR)
   debt-equity: missing: Interest-bearing debt (LKR); Total equity (LKR)
   dividend-yield: missing: Dividends per share, last 12 months (LKR)
+  fcf-yield: needs operating cash flow and capital expenditure
   fcf: missing: Net cash from operating activities (LKR); Capital expenditure, as a positive amount (LKR)
   from-high-52w: needs a year of history; 30 bars stored
   from-low-52w: needs a year of history; 30 bars stored
+  gross-margin-change: needs gross_profit for this period and the same period a year earlier
   gross-margin: missing: Gross profit (LKR)
   interest-cover: missing: Operating profit (LKR); Finance cost, as a positive amount (LKR)
   macd-hist: needs 34 bars; 30 bars stored
   macd-signal: needs 34 bars; 30 bars stored
+  operating-margin-change: needs operating_profit for this period and the same period a year earlier
   operating-margin: missing: Operating profit (LKR)
   payout: missing: Dividends per share, last 12 months (LKR)
   price-vs-sma-200: needs 200 bars; 30 bars stored
   price-vs-sma-50: needs 50 bars; 30 bars stored
+  profit-growth-change: needs three comparable years of pat_parent
   rel-strength-1y: needs stock and ASPI history from 2025-01-14; 30 bars stored
   rel-strength-3m: needs stock and ASPI history from 2025-10-14; 30 bars stored
   return-1m: needs history from 2025-12-14; 30 bars stored
   return-1y: needs history from 2025-01-14; 30 bars stored
   return-3m: needs history from 2025-10-14; 30 bars stored
+  revenue-growth-change: needs three comparable years of revenue
   sma-200: needs 200 bars; 30 bars stored
   sma-50: needs 50 bars; 30 bars stored
   volatility-1y: needs 60 daily returns in the last year; 30 bars stored

@@ -19,6 +19,7 @@ const (
 	Points  Unit = "points"  // 61.234 → "61.23" (indicator readings such as RSI)
 	Change  Unit = "change"  // 0.0281 → "+2.81%", signed
 	Count   Unit = "count"   // 9 → "9"
+	PP      Unit = "pp"      // 0.0120 → "+1.20pp", a change in a percentage
 )
 
 // Input is one number a ratio needs. Key is shared with stored fundamentals.
@@ -126,6 +127,15 @@ func Format(v float64, u Unit) string {
 			s = "0.00"
 		}
 		return s + "%"
+	case PP:
+		p := strconv.FormatFloat(v*100, 'f', 2, 64)
+		if p == "-0.00" {
+			p = "0.00"
+		}
+		if v > 0 && p != "0.00" {
+			p = "+" + p
+		}
+		return p + "pp"
 	case Count:
 		return strconv.FormatFloat(v, 'f', 0, 64)
 	default:

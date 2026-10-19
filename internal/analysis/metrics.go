@@ -204,7 +204,9 @@ func Compute(s *Snapshot) Metrics {
 	}
 	b.emit("peg", "peg", "", x, "")
 
-	return Metrics{List: append(append(b.out, computeTechnical(s)...), computeLiquidity(s)...)}
+	list := append(b.out, computeTrends(s, b.fin, profitField, revField)...)
+	list = append(list, computeTechnical(s)...)
+	return Metrics{List: append(list, computeLiquidity(s)...)}
 }
 
 func (x *src) setOK(key string, v float64, ok bool) *src {

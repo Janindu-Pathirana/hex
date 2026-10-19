@@ -352,6 +352,9 @@ var rules = []rule{
 		return c.find("drawdown", DimTechnical, Watch, "Deep fall from a past peak",
 			fmt.Sprintf("The price fell %.0f%% from its peak within the stored history. Stored prices are not adjusted for splits, bonus issues or rights, so check the corporate actions.", -v*100), "max-drawdown")
 	}},
+	{"margin-trend", DimProfitability, marginTrendRule},
+	{"growth-accel", DimGrowth, growthAccelRule},
+	{"fcf-yield", DimCash, fcfYieldRule},
 	{"liquidity", DimLiquidity, liquidityRule},
 	{"thin-trading", DimData, func(c *ctx) *Finding {
 		n, ok := c.val("active-days-14")
