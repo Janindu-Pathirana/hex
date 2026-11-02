@@ -206,3 +206,42 @@ func TestUpdateRollsBack(t *testing.T) {
 		t.Fatalf("meta should be rolled back: %v", err)
 	}
 }
+
+func TestAuditStats(t *testing.T) {
+	ctx := context.Background()
+	db := open(t)
+	update(t, db, func(tx *store.Tx) error {
+		if err := tx.MergeBars(ctx, "A.N0000", []store.Bar{
+			{Date: "2026-01-02", Close: 10, Volume: 5}, {Date: "2026-01-05", Close: 11, Volume: 0},
+			{Date: "2026-01-20", Close: 12, Volume: 7},
+		}); err != nil {
+			return err
+		}
+		if err := tx.MergeBars(ctx, "B.N0000", []store.Bar{{Date: "2026-01-02", Close: 1, Volume: 1}}); err != nil {
+			return err
+		}
+		return tx.UpsertFundamentals(ctx, []store.Fundamental{
+			{Code: "A.N0000", PeriodEnd: "2025-03-31", PeriodType: "12M", Scope: "group", Field: "revenue", Source: store.SourcePDF, Value: 1, Confidence: 0.9},
+			{Code: "A.N0000", PeriodEnd: "2025-03-31", PeriodType: "12M", Scope: "group", Field: "pat", Source: store.SourcePDF, Value: 1, Confidence: 0.5},
+			{Code: "A.N0000", PeriodEnd: "2025-06-30", PeriodType: "3M", Scope: "group", Field: "revenue", Source: store.SourcePDF, Value: 1, Confidence: 0.8},
+		})
+	})
+
+	bars, err := db.BarStats(ctx)
+	if err != nil || len(bars) != 2 {
+		t.Fatalf("BarStats = %+v, %v", bars, err)
+	}
+	if a := bars[0]; a.Code != "A.N0000" || a.Bars != 3 || a.First != "2026-01-02" || a.Last != "2026-01-20" || a.MaxGapDays != 15 || a.ZeroVolume != 1 {
+		t.Fatalf("A = %+v", a)
+	}
+	if b := bars[1]; b.Bars != 1 || b.MaxGapDays != 0 {
+		t.Fatalf("B = %+v (a single bar has no gap)", b)
+	}
+	fs, err := db.FundamentalStats(ctx, 0.7)
+	if err != nil || len(fs) != 1 {
+		t.Fatalf("FundamentalStats = %+v, %v", fs, err)
+	}
+	if f := fs[0]; f.Periods != 2 || f.Values != 3 || f.Newest != "2025-06-30" || f.Low != 1 || f.MinConf != 0.5 {
+		t.Fatalf("fundamentals = %+v", f)
+	}
+}

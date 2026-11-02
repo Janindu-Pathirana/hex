@@ -34,6 +34,22 @@ func (s *Snapshot) WithMarket(days []MarketDay) *Snapshot {
 	return s
 }
 
+// WithSL20 adds daily S&P SL20 levels (Bar.Close holds the level). They take
+// the place of the levels in the market days when there are more of them,
+// because the market-day statistics cover only the last few days.
+func (s *Snapshot) WithSL20(levels []Bar) *Snapshot {
+	s.sl20 = sortedBars(levels)
+	return s
+}
+
+// longer returns the series with more points.
+func longer(a, b []Bar) []Bar {
+	if len(a) >= len(b) {
+		return a
+	}
+	return b
+}
+
 // indexSeries turns one index level of the market days into bars.
 func indexSeries(days []MarketDay, level func(MarketDay) float64) []Bar {
 	var out []Bar
@@ -67,8 +83,8 @@ func computeMarket(s *Snapshot) []Metric {
 			Note: fmt.Sprintf("needs %s; %d market days stored", need, len(days))})
 	}
 
-	asi := indexSeries(days, func(d MarketDay) float64 { return d.ASI })
-	sl20 := indexSeries(days, func(d MarketDay) float64 { return d.SPSL20 })
+	asi := longer(s.index, indexSeries(days, func(d MarketDay) float64 { return d.ASI }))
+	sl20 := longer(s.sl20, indexSeries(days, func(d MarketDay) float64 { return d.SPSL20 }))
 
 	for _, w := range []struct {
 		id, name string

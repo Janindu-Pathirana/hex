@@ -16,6 +16,7 @@ import (
 const (
 	KindSecurities = "securities"
 	KindMarket     = "market"
+	KindIndex      = "index"
 	KindQuotes     = "quotes"
 	KindInfo       = "info"
 	KindHistory    = "history"
@@ -93,6 +94,27 @@ func Market(ttl time.Duration) engine.Job {
 			}
 			return tx.UpsertMarketDays(ctx, MarketDayRows(days))
 		})
+	}}
+}
+
+// IndexHistory stores a year of daily ASPI and S&P SL20 levels. The market job
+// only records today's value, so without this the index series stays empty
+// and every comparison with the market is unavailable. History beyond a year
+// builds up as the job keeps running.
+func IndexHistory() engine.Job {
+	return engine.FuncJob{K: KindIndex, Kd: KindIndex, T: 24 * time.Hour, F: func(ctx context.Context, env *engine.Env) error {
+		var bars []store.IndexBar
+		for _, ix := range []struct {
+			chart    int
+			id, name string
+		}{{cse.ChartASPI, "ASPI", "All Share Price Index"}, {cse.ChartSPSL20, "SPSL20", "S&P Sri Lanka 20"}} {
+			pts, err := env.CSE.IndexChart(ctx, ix.chart, cse.PeriodYear)
+			if err != nil {
+				return fmt.Errorf("fetch %s history: %w", ix.id, err)
+			}
+			bars = append(bars, IndexChartRows(ix.id, ix.name, pts)...)
+		}
+		return env.Store.Update(ctx, func(tx *store.Tx) error { return tx.UpsertIndexBars(ctx, bars) })
 	}}
 }
 

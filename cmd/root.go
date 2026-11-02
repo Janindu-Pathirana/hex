@@ -42,6 +42,7 @@ func newRootCmd(a *app) *cobra.Command {
 		newCompanyCmd(a),
 		newCalcCmd(),
 		newAnalyzeCmd(a),
+		newDataCmd(a),
 		newSyncCmd(a),
 		newReportsCmd(a),
 		newFundamentalsCmd(a),

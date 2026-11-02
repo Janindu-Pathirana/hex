@@ -29,9 +29,11 @@ type Options struct {
 	Limits    pdfx.Limits
 }
 
-// DefaultOptions take the last four interim reports, which carry both the
-// quarter and the year-to-date (12M in Q4) figures, and no annual reports.
-var DefaultOptions = Options{Quarterly: 4, Limits: pdfx.DefaultLimits}
+// DefaultOptions take the last six interim reports and no annual reports. Each
+// report yields its own period only, so the latest quarter needs the report
+// from a year earlier for year-on-year figures and the trailing twelve months
+// (on live data, three reports left the comparisons empty; six filled them).
+var DefaultOptions = Options{Quarterly: 6, Limits: pdfx.DefaultLimits}
 
 // Select returns the newest annual and quarterly reports allowed by o.
 func (o Options) Select(reports []store.Report) []store.Report {

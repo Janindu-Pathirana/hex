@@ -96,6 +96,32 @@ func IndexRow(id, name string, v *cse.IndexValue) store.IndexBar {
 	return store.IndexBar{IndexID: id, Date: output.Date(v.Timestamp), Name: name, Value: v.Value, Change: v.Change, ChangePct: v.Percentage}
 }
 
+// IndexChartRows maps index chart points to daily index bars. The day's change
+// is the move from the previous point; one point per Colombo date, the later
+// one winning.
+func IndexChartRows(id, name string, pts []cse.IndexPoint) []store.IndexBar {
+	byDate := map[string]store.IndexBar{}
+	var order []string
+	prev := 0.0
+	for i, p := range pts {
+		d := output.Date(p.D)
+		b := store.IndexBar{IndexID: id, Date: d, Name: name, Value: p.Value, ChangePct: p.Percent}
+		if i > 0 {
+			b.Change = p.Value - prev
+		}
+		prev = p.Value
+		if _, seen := byDate[d]; !seen {
+			order = append(order, d)
+		}
+		byDate[d] = b
+	}
+	out := make([]store.IndexBar, 0, len(order))
+	for _, d := range order {
+		out = append(out, byDate[d])
+	}
+	return out
+}
+
 // SectorRows maps sector indices to daily index bars keyed by sector symbol.
 func SectorRows(secs []cse.Sector) []store.IndexBar {
 	out := make([]store.IndexBar, 0, len(secs))

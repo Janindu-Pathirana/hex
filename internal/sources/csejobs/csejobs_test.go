@@ -3,6 +3,7 @@ package csejobs_test
 import (
 	"context"
 	"io"
+	"net/http"
 	"path/filepath"
 	"testing"
 	"time"
@@ -15,7 +16,7 @@ import (
 	"github.com/Janindu-Pathirana/hex/internal/store"
 )
 
-var all = csejobs.Scope{Securities: true, Market: true, Quotes: true, Info: true, History: true, Profiles: true, Reports: true, Actions: true}
+var all = csejobs.Scope{Securities: true, Market: true, Index: true, Quotes: true, Info: true, History: true, Profiles: true, Reports: true, Actions: true}
 
 func setup(t *testing.T) (*csetest.Server, *engine.Env) {
 	t.Helper()
@@ -64,8 +65,12 @@ func TestFullSync(t *testing.T) {
 	if days, _ := db.MarketDays(ctx); len(days) != 2 || days[1].PER == 0 {
 		t.Fatalf("market days = %+v", days)
 	}
-	if aspi, _ := db.IndexBars(ctx, "ASPI"); len(aspi) != 1 {
-		t.Fatalf("aspi bars = %d", len(aspi))
+	// Today's snapshot plus the five chart points, on distinct dates.
+	if aspi, _ := db.IndexBars(ctx, "ASPI"); len(aspi) != 6 || aspi[0].Date != "2025-11-06" || aspi[0].Value != 23115.12 {
+		t.Fatalf("aspi bars = %+v", aspi)
+	}
+	if snp, _ := db.IndexBars(ctx, "SPSL20"); len(snp) != 5 || snp[len(snp)-1].Date != "2026-10-30" {
+		t.Fatalf("s&p sl20 bars = %+v", snp)
 	}
 	if acts, _ := db.Actions(ctx, ""); len(acts) == 0 {
 		t.Fatal("no corporate actions")
@@ -107,13 +112,13 @@ func TestPlanStagesAndTTL(t *testing.T) {
 	open := time.Date(2026, 10, 13, 10, 0, 0, 0, output.Colombo)   // Tuesday
 	closed := time.Date(2026, 10, 11, 10, 0, 0, 0, output.Colombo) // Sunday
 	stages := csejobs.Plan(all, []string{"JKH.N0000"}, open)
-	if len(stages) != 3 || len(stages[0]) != 3 || len(stages[2]) != 1 {
+	if len(stages) != 3 || len(stages[0]) != 4 || len(stages[2]) != 1 {
 		t.Fatalf("stages = %d", len(stages))
 	}
-	if stages[0][2].TTL() != 5*time.Minute {
+	if stages[0][3].TTL() != 5*time.Minute {
 		t.Fatalf("quotes TTL in market hours = %v", stages[0][2].TTL())
 	}
-	if csejobs.Plan(all, nil, closed)[0][2].TTL() != 12*time.Hour {
+	if csejobs.Plan(all, nil, closed)[0][3].TTL() != 12*time.Hour {
 		t.Fatal("quotes TTL when closed should be 12h")
 	}
 	if !csejobs.MarketOpen(open) || csejobs.MarketOpen(closed) {
@@ -173,5 +178,29 @@ func TestProfileRowsSplitsRoles(t *testing.T) {
 		if d.Name == "" || (d.Role != "" && d.Name[len(d.Name)-1] == ')') {
 			t.Fatalf("bad director split: %+v", d)
 		}
+	}
+}
+
+func TestIndexChartRows(t *testing.T) {
+	d1 := time.Date(2026, 10, 29, 14, 30, 0, 0, output.Colombo).UnixMilli()
+	d2 := time.Date(2026, 10, 30, 9, 30, 0, 0, output.Colombo).UnixMilli()
+	d3 := time.Date(2026, 10, 30, 14, 30, 0, 0, output.Colombo).UnixMilli() // same day as d2: the later point wins
+	rows := csejobs.IndexChartRows("ASPI", "All Share Price Index", []cse.IndexPoint{
+		{D: d1, Value: 100, Percent: 1}, {D: d2, Value: 103, Percent: 3}, {D: d3, Value: 102, Percent: 2},
+	})
+	if len(rows) != 2 || rows[0].Date != "2026-10-29" || rows[0].Change != 0 {
+		t.Fatalf("rows = %+v", rows)
+	}
+	if rows[1].Date != "2026-10-30" || rows[1].Value != 102 || rows[1].Change != -1 || rows[1].ChangePct != 2 {
+		t.Fatalf("last row = %+v", rows[1])
+	}
+}
+
+func TestIndexHistoryNoDataFails(t *testing.T) {
+	srv, env := setup(t)
+	srv.Override("/api/chartData", func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("[]")) })
+	sum, _ := engine.Run(context.Background(), env, []engine.Stage{{csejobs.IndexHistory()}}, engine.Options{})
+	if sum.Count(engine.Failed) != 1 {
+		t.Fatalf("an empty chart should fail the job: %+v", sum)
 	}
 }

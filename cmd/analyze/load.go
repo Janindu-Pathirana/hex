@@ -65,12 +65,16 @@ func Load(ctx context.Context, db *store.DB, code string, now time.Time) (*analy
 	if err != nil {
 		return nil, fmt.Errorf("load index bars for ASPI: %w", err)
 	}
+	sl20, err := db.IndexBars(ctx, "SPSL20")
+	if err != nil {
+		return nil, fmt.Errorf("load index bars for SPSL20: %w", err)
+	}
 	days, err := db.MarketDays(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("load market days: %w", err)
 	}
 	snap := analysis.NewSnapshot(code, name, sector, price, shares, now, rows)
-	return snap.WithBars(barsFromStore(bars), indexFromStore(idx)).WithMarket(marketFromStore(days)), nil
+	return snap.WithBars(barsFromStore(bars), indexFromStore(idx)).WithSL20(indexFromStore(sl20)).WithMarket(marketFromStore(days)), nil
 }
 
 func barsFromStore(in []store.Bar) []analysis.Bar {

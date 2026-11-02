@@ -6,14 +6,14 @@ Legend: `[ ]` open, `[x]` done. Each task ends with "Done when".
 
 ## P0: Foundation and audit
 - [x] **Retire stale `FEATURES.md`**: point it at `doc/features.md` or delete it. Done when: one source of truth.
-- [ ] **Audit stored data**: per symbol, count `price_bars`, earliest date, gaps; count fundamentals periods and confidence. Done when: a data-availability matrix is in `doc/data-audit.md`.
-- [ ] **Start accumulating history now**: schedule `hex sync history` daily (history grows only while syncing). Done when: a documented cron/launchd recipe exists.
+- [x] **Audit stored data**: `hex data audit [SYMBOL...] [--json]` (`cmd/data/audit.go`): bars, range, longest gap, statement periods, low-confidence share, report pipeline, quote age, index coverage, with flags that name the fix.
+- [x] **Start accumulating history now**: launchd and cron recipes in `doc/sync-schedule.md`. Still to do by hand: install one.
 - [ ] **Fix `debt-equity` in `analyze`**: feed a debt input or drop the metric. [fundamental-analysis]
 
 ## Found by the first real-data run (2026-11-02, `doc/data-sources.md` section 3)
 - [x] One-year windows failed when history began a few days late: windows now tolerate a start up to 7 days before the first bar.
-- [ ] **Index history job**: `index_bars` and `market_daily` hold only 2 days, so every ASPI / S&P SL20 comparison is `n/m`. Fetch one year of ASPI and S&P SL20 levels (`chartData`) and keep accumulating. [cse-api, scrape-engine]
-- [ ] Raise the default quarterly reports from 4 to at least 6 (or fetch the prior-year report) so growth, margin change and Piotroski have a prior-year period.
+- [x] **Index history job** (`hex sync index`): a year of daily ASPI (`chartId=1`) and S&P SL20 (`chartId=40`) levels; market comparisons now use it. `market_daily` still holds only the last 2 days, so market turnover and foreign flow fill in only as the daily sync keeps running.
+- [x] Default interim reports raised from 4 to 6: each report yields only its own period, so year-on-year needs the report from a year earlier. Verified on JKH: revenue growth, margin changes and Piotroski (5 of 6) now compute.
 - [ ] Bank statement extraction (SAMP: "no statement values found"); capex and debt labels (JKH).
 - [ ] Round large numbers in the report (`69,385,571.4`).
 

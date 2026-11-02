@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 )
 
 // MarketStatus returns the market state, e.g. "Regular Trading" or "Market Closed".
@@ -171,4 +172,33 @@ func (c *Client) DailyMarketSummary(ctx context.Context) ([]DailyMarket, error) 
 		return nil, fmt.Errorf("request dailyMarketSummery: %w", ErrNoData)
 	}
 	return days, nil
+}
+
+// Chart ids for chartData (verified 2026-11-02 against the website's own calls).
+const (
+	ChartASPI   = 1
+	ChartSPSL20 = 40
+)
+
+// IndexPoint is one point of an index chart. With PeriodYear there is one per
+// trading day (about 240); D is a time on the trade date, not midnight.
+type IndexPoint struct {
+	D       int64   `json:"d"` // ms
+	Value   float64 `json:"v"`
+	Percent float64 `json:"pc"` // percentage change on the day
+}
+
+// IndexChart fetches index history for chartID (ChartASPI or ChartSPSL20).
+// The date-range parameters the website sends are ignored for PeriodYear, so
+// history longer than a year has to be accumulated by syncing regularly.
+func (c *Client) IndexChart(ctx context.Context, chartID, period int) ([]IndexPoint, error) {
+	var pts []IndexPoint
+	form := url.Values{"chartId": {strconv.Itoa(chartID)}, "period": {strconv.Itoa(period)}}
+	if err := c.post(ctx, "chartData", form, &pts); err != nil {
+		return nil, err
+	}
+	if len(pts) == 0 {
+		return nil, ErrNoData
+	}
+	return pts, nil
 }
