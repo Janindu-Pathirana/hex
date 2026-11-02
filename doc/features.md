@@ -4,6 +4,45 @@ What `hex` does today, verified against the code. For the roadmap see [tasks.md]
 
 Build and install steps are in the root [readme.md](../readme.md).
 
+## Feature checklist
+
+`[x]` is built, tested and merged. `[ ]` is not done; the same items are in section 10 and in [tasks.md](tasks.md).
+
+**Commands**
+- [x] `hex company list`, `show-profile`, `show-financial`
+- [x] `hex calc <ratio>` and `hex calc list` (22 ratios)
+- [x] `hex analyze <SYMBOL>` with `--json` and `--section`
+- [x] `hex sync` (all groups), `hex sync status`, `--dry-run`, resume, rate limiting
+- [x] `hex reports list` and `extract`
+- [x] `hex fundamentals show` and `set` (manual override)
+- [x] `hex data audit`
+- [x] `hex clean`, `hex version`, shell completion
+
+**Analysis sections in `hex analyze`**
+- [x] Valuation, profitability, growth, financial health, cash flow, dividends
+- [x] Trends and yields (margin, ROE and growth change, FCF yield, asset turnover)
+- [x] Piotroski F-score (8 of the 9 tests; the ninth needs share-count history)
+- [x] Price and volume indicators (returns, SMA, EMA, RSI, MACD, Bollinger, ATR, volatility, drawdown, 52-week range, relative strength)
+- [x] Liquidity metrics and gate
+- [x] Market context (ASPI, S&P SL20, turnover, foreign flow)
+- [x] Rule findings and data-quality findings, with the not-investment-advice disclaimer
+
+**Data collection**
+- [x] Securities, quotes, market statistics, index history (ASPI, S&P SL20)
+- [x] Company info, profile, daily price history, report catalogue
+- [x] Corporate actions with ex, record and payment dates, ratios and prices
+- [x] Report PDFs, statement extraction with confidence, opt-in Claude fallback
+- [x] Daily/weekly sync recipes ([sync-schedule.md](sync-schedule.md))
+
+**Not done**
+- [ ] Prices adjusted for splits, bonus and rights issues
+- [ ] Sector and market benchmarks, Altman Z, Beneish M, bank and insurer rules
+- [ ] `--narrate`, Ollama backend ([llm-plan.md](llm-plan.md))
+- [ ] CBSL macro data
+- [ ] Screener, watchlist, portfolio
+- [ ] Feature store, backtest, prediction
+- [ ] Tables and a global `--json` toggle; `company show-*` reading the store
+
 ## 1. Commands
 
 | Command | What it does | Flags | Code |
@@ -163,7 +202,7 @@ Cache location: `os.UserCacheDir()/hex/` (macOS `~/Library/Caches/hex/`), writes
 | 0 | Foundation | done |
 | 1 | SQLite store and scrape engine | done (tables and global `--json` pending) |
 | 2 | Price history (accumulated daily bars) | done |
-| 3 | Corporate actions | announcements stored; dates and price adjustment pending |
+| 3 | Corporate actions | done for data (dates, ratios, prices from `/api/smd`); price adjustment pending |
 | 4 | Technical analysis | fundamentals and price/volume indicators done; benchmarks, scores pending |
 | 5 | Fundamentals from PDFs | done (rules + opt-in Claude); Ollama backend and `--narrate` planned ([llm-plan.md](llm-plan.md)) |
 | 6 | CBSL macro | not started |
