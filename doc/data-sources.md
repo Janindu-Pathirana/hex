@@ -62,3 +62,21 @@ Synced `securities market quotes actions` plus `info history profiles reports` f
 ## 5. Index charts: `POST /api/chartData`
 
 Verified 2026-11-02. Form body `chartId=<id>&period=5`. `chartId=1` is the ASPI and **`chartId=40` is the S&P SL20** (found in the site's own code; ids 2 to 8 return `[]`). The response is a plain array of `{d (ms), v (level), pc (percent change)}`, 240 daily points for `period=5`. `d` is a time on the trade date, not midnight. The `fromDate`/`toDate` fields the site can send are ignored for `period=5`, so history beyond a year has to be accumulated.
+
+## 6. How hex uses `/api/smd` (since migration 0002)
+
+`hex sync actions` fetches `GET /api/cntSecurity` (ticker to `securityId`), keeps the tickers in the symbol list, and searches 20 companies at a time for `cse.SMDCategories` (dividends, scrip dividends, sub-divisions, capitalisations, rights issues; `RIGHTS ISSUE (DATES)` is left out because it always returns HTTP 500). Rows are stored by announcement id, matched to a code by ticker (voting `N0000` series preferred). `ex_date` is the date prices adjust: `xd` for dividends and scrip, `xr` for rights, `xc` for capitalisations and `tradingCommencement` for sub-divisions.
+
+Live backfill from 2018-01-01 (2026-11-02):
+
+| Kind | Rows | With ex date | Proportion text | Ratio parsed |
+|---|---|---|---|---|
+| dividend | 1,541 | 1,500 | n/a | n/a (dividend per share in `dps`) |
+| scrip | 189 | 88 | 158 | 153 |
+| rights | 232 | 26 | 101 | 96 |
+| split | 76 | 38 | 50 | 10 |
+| bonus | 2 | 2 | 1 | 1 |
+
+- One real event is several rows (the announcement, a "dates" row, a further announcement). Rights ex dates sit on the later rows; the ratio and issue price on the first. Merging them is the adjustment phase's job.
+- Sub-division ratios are almost never in the text (they are in an attachment), so the factor has to come from the prices.
+- The migration deletes the old dateless rows and makes the job due again; the first sync after upgrading refills them.
