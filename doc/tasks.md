@@ -10,9 +10,16 @@ Legend: `[ ]` open, `[x]` done. Each task ends with "Done when".
 - [ ] **Start accumulating history now**: schedule `hex sync history` daily (history grows only while syncing). Done when: a documented cron/launchd recipe exists.
 - [ ] **Fix `debt-equity` in `analyze`**: feed a debt input or drop the metric. [fundamental-analysis]
 
+## Found by the first real-data run (2026-11-02, `doc/data-sources.md` section 3)
+- [x] One-year windows failed when history began a few days late: windows now tolerate a start up to 7 days before the first bar.
+- [ ] **Index history job**: `index_bars` and `market_daily` hold only 2 days, so every ASPI / S&P SL20 comparison is `n/m`. Fetch one year of ASPI and S&P SL20 levels (`chartData`) and keep accumulating. [cse-api, scrape-engine]
+- [ ] Raise the default quarterly reports from 4 to at least 6 (or fetch the prior-year report) so growth, margin change and Piotroski have a prior-year period.
+- [ ] Bank statement extraction (SAMP: "no statement values found"); capex and debt labels (JKH).
+- [ ] Round large numbers in the report (`69,385,571.4`).
+
 ## P1: Price correctness (prerequisite for every return feature)
-- [ ] **Corporate-action dates**: verify `getFinancialAnnouncement` (unused client method), fill `xd`, `record_date`, `payment_date`. [cse-api, scrape-engine]
-- [ ] **Adjustment factors**: split, bonus, rights, scrip. Store adjusted close beside raw. [sqlite-store]
+- [ ] **Corporate-action dates**: verified 2026-11-02 that `getFinancialAnnouncement` is report uploads only. Dates and ratios come from `POST /api/smd` (see `doc/data-sources.md`): switch the Actions job to it, chunked 20 companies per request, categories from `/api/smd/categories`, fill `xd`, `xr`, `xc`, `record_date`, `payment_date`, trading dates, proportion text and issue price. [cse-api, scrape-engine]
+- [ ] **Adjustment factors**: split, bonus, rights, scrip. Store adjusted close beside raw. Confirmed the chart is raw (WAPO 102.75 to 23.60 across a 1-for-4 sub-division), so this is required. Ratios are free text (sometimes absent), so add a manual override. [sqlite-store]
 - [ ] **Holiday-aware market-open calendar** for TTLs and gaps. [cse-market-context]
 - [ ] **Tests** with fixtures for each action type. [go-testing]
 

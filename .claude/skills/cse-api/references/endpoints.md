@@ -77,3 +77,8 @@ Note that the dates here are **strings**, unlike `financials`, where they are ms
 
 ### `GET https://www.cse.lk/chat/company_symbol_list.csv`
 A header row, then `COMPANY NAME,TICKER.SERIES`. Parsed by `cse.ParseSymbolList`, cached for 24h by `company.Securities` (`cmd/company/company.go`). Unknown symbols: `companyProfile` returns **204** with an empty body, `financials` returns `{}` (verified 2026-10-13); both map to `cse.ErrNoData`.
+
+
+## Announcements with dates and ratios (verified 2026-11-02)
+
+`approvedAnnouncement` has no dates or ratios. The website uses `POST /api/smd` with `{companyIds, categories, fromDate, toDate}`; full request, response and limits are in `doc/data-sources.md`. Categories come from `GET /api/smd/categories`. `getFinancialAnnouncement` is report uploads only.
