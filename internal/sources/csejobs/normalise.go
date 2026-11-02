@@ -213,6 +213,8 @@ func ReportRows(code string, f *cse.Financials) []store.Report {
 func ActionKind(category string) string {
 	c := strings.ToUpper(category)
 	switch {
+	case strings.Contains(c, "SCRIP"):
+		return store.ActionScrip
 	case strings.Contains(c, "DIVIDEND"):
 		return store.ActionDividend
 	case strings.Contains(c, "RIGHTS"):
@@ -227,50 +229,73 @@ func ActionKind(category string) string {
 	return store.ActionOther
 }
 
-// ActionRows maps announcements to corporate actions. Companies are matched
-// to a security code by exact name (preferring the N0000 series), because
-// the announcement list carries no symbol.
-func ActionRows(anns []cse.Announcement, secs []store.Security) []store.CorporateAction {
-	byName := make(map[string]string)
+// smdDate converts the DD-MM-YYYY dates of the announcement search to
+// YYYY-MM-DD. Anything else, including empty, gives "".
+func smdDate(s string) string {
+	t, err := time.ParseInLocation("02-01-2006", strings.TrimSpace(s), output.Colombo)
+	if err != nil {
+		return ""
+	}
+	return t.Format("2006-01-02")
+}
+
+// ActionRows maps announcement-search rows to corporate actions. Rows are
+// matched to a security code by ticker, preferring the voting N0000 series.
+// Ratios are parsed from the published text; when the text has none the ratio
+// stays empty so that a person can enter it.
+func ActionRows(rows []cse.SMDAnnouncement, secs []store.Security) []store.CorporateAction {
+	byTicker := make(map[string]string)
 	for _, s := range secs {
-		key := normName(s.Name)
-		if cur, ok := byName[key]; !ok || (s.Series == "N0000" && !strings.HasSuffix(cur, ".N0000")) {
-			byName[key] = s.Code
+		t := strings.ToUpper(s.Ticker)
+		if cur, ok := byTicker[t]; !ok || (s.Series == "N0000" && !strings.HasSuffix(cur, ".N0000")) {
+			byTicker[t] = s.Code
 		}
 	}
-	out := make([]store.CorporateAction, 0, len(anns))
-	for _, a := range anns {
-		raw, _ := json.Marshal(a)
-		row := store.CorporateAction{
-			ID: a.ID, Company: a.Company, Category: a.Category, Kind: ActionKind(a.Category),
-			Announced: announcedDate(a), XD: deref(a.XD), RecordDate: deref(a.RecordDate),
-			PaymentDate: deref(a.PaymentDate), Remarks: strings.TrimSpace(deref(a.Remarks)), Raw: string(raw),
+	out := make([]store.CorporateAction, 0, len(rows))
+	for _, r := range rows {
+		raw, _ := json.Marshal(r)
+		a := store.CorporateAction{
+			ID: r.ID, Code: byTicker[strings.ToUpper(r.Symbol)], Ticker: strings.ToUpper(r.Symbol), SecID: r.SecID,
+			Company: r.Company, Category: r.Category, Kind: ActionKind(r.Category), Announced: smdDate(r.Date),
+			Remarks: strings.TrimSpace(r.Remarks), Raw: string(raw),
+			XD: smdDate(r.XD), XR: smdDate(r.XR), XC: smdDate(r.XC), RecordDate: smdDate(r.RecordDate),
+			PaymentDate: smdDate(r.Payment), TradingCommencement: smdDate(r.TradingCommence),
+			TradingSuspended: smdDate(r.TradingSuspended), AllotmentDate: smdDate(firstNonEmpty(r.Allotment, r.DateAllotment)),
+			EntitlementDate: smdDate(r.EntitlementAsAt), AGMDate: smdDate(r.AGM), ChildID: r.ChildAnnouncement,
 		}
-		if a.Symbol != nil && *a.Symbol != "" {
-			row.Code = *a.Symbol
-		} else {
-			row.Code = byName[normName(a.Company)]
+		if v, ok := r.VotingDivPerShare.Float(); ok {
+			a.DPS = &v
 		}
-		out = append(out, row)
+		var proportion cse.Text
+		switch a.Kind {
+		case store.ActionDividend:
+			a.ExDate = a.XD
+		case store.ActionScrip:
+			a.ExDate, proportion = a.XD, r.VotingProportion
+			if v, ok := r.VotingConsider.Float(); ok {
+				a.Price = &v
+			}
+		case store.ActionBonus:
+			a.ExDate, proportion = a.XC, r.VotingProportion
+		case store.ActionRights:
+			a.ExDate, proportion = a.XR, r.RightsProportion
+			if v, ok := r.RightsPrice.Float(); ok {
+				a.Price = &v
+			}
+		case store.ActionSplit:
+			a.ExDate = a.TradingCommencement
+			proportion = cse.Text(r.Remarks)
+		}
+		a.Proportion = string(proportion)
+		if num, den, ok := ParseRatio(a.Kind, a.Proportion); ok {
+			a.RatioNum, a.RatioDen = &num, &den
+		}
+		out = append(out, a)
 	}
 	return out
 }
 
-func announcedDate(a cse.Announcement) string {
-	if t, err := time.ParseInLocation("02 Jan 2006", strings.TrimSpace(a.Date), output.Colombo); err == nil {
-		return t.Format("2006-01-02")
-	}
-	return output.Date(a.CreatedDate)
-}
-
 func normName(s string) string { return strings.Join(strings.Fields(strings.ToUpper(s)), " ") }
-
-func deref(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
 
 func firstNonEmpty(vals ...string) string {
 	for _, v := range vals {

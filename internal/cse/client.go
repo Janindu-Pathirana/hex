@@ -69,12 +69,26 @@ var Default = New()
 
 // post sends a form-encoded POST to endpoint and decodes the JSON response into out.
 func (c *Client) post(ctx context.Context, endpoint string, form url.Values, out any) error {
+	return c.send(ctx, endpoint, form, "application/x-www-form-urlencoded; charset=UTF-8", form.Encode(), out)
+}
+
+// postJSON sends payload as a JSON POST body. The raw layer is keyed by the
+// payload, passed to Observe as a single "json" form value.
+func (c *Client) postJSON(ctx context.Context, endpoint string, payload, out any) error {
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("encode %s request: %w", endpoint, err)
+	}
+	return c.send(ctx, endpoint, url.Values{"json": {string(b)}}, "application/json", string(b), out)
+}
+
+func (c *Client) send(ctx context.Context, endpoint string, key url.Values, contentType, payload string, out any) error {
 	body, err := c.do(ctx, c.HTTP, maxAPIBody, func() (*http.Request, error) {
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+endpoint, strings.NewReader(form.Encode()))
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+endpoint, strings.NewReader(payload))
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+		req.Header.Set("Content-Type", contentType)
 		req.Header.Set("Accept", "application/json, text/plain, */*")
 		req.Header.Set("Origin", "https://www.cse.lk")
 		req.Header.Set("Referer", "https://www.cse.lk/")
@@ -87,7 +101,7 @@ func (c *Client) post(ctx context.Context, endpoint string, form url.Values, out
 
 	trimmed := bytes.TrimSpace(body)
 	if c.Observe != nil && len(trimmed) > 0 {
-		c.Observe(endpoint, form, trimmed)
+		c.Observe(endpoint, key, trimmed)
 	}
 	if len(trimmed) == 0 || string(trimmed) == "{}" || string(trimmed) == "[]" || string(trimmed) == "null" {
 		return fmt.Errorf("request %s: %w", endpoint, ErrNoData)

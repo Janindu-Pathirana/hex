@@ -37,6 +37,7 @@ type syncOptions struct {
 	llm         bool
 	llmModel    string
 	llmMax      int
+	actionsFrom string // YYYY-MM-DD, "" for the default window
 }
 
 // syncPlan is what a sync covers: the cse groups plus the report pipeline.
@@ -58,7 +59,9 @@ ASPI and S&P SL20 levels), securities (symbol list), quotes (today's prices), an
 beta), history (daily bars, accumulated beyond one year), profiles,
 reports (PDF catalogue), pdfs (download the newest reports and store
 their text) and fundamentals (read income statement, balance sheet and cash
-flow figures from that text). actions stores recent corporate announcements. "all" selects
+flow figures from that text). actions stores corporate announcements (cash and scrip dividends, sub-divisions,
+capitalisations, rights issues) with their ex, record and payment dates and
+proportions, for the last 400 days or from --actions-since. "all" selects
 every group.
 
 With no group, hex syncs market, index, securities and quotes, plus info, history,
@@ -83,6 +86,7 @@ where it stopped. Requests are rate-limited and run at most 4 at a time.`,
 	f.BoolVar(&o.dryRun, "dry-run", false, "Show which jobs would run without fetching")
 	f.IntVarP(&o.concurrency, "concurrency", "c", engine.MaxConcurrency, "Jobs to run at once (max 4)")
 	o.reports = reportjobs.DefaultOptions
+	f.StringVar(&o.actionsFrom, "actions-since", "", "Start date (YYYY-MM-DD) for the actions group; default is the last 400 days. Use with --force to backfill")
 	f.IntVar(&o.reports.Quarterly, "quarterly-reports", o.reports.Quarterly, "Newest interim reports per company for pdfs")
 	f.IntVar(&o.reports.Annual, "annual-reports", o.reports.Annual, "Newest annual reports per company for pdfs (large files)")
 	f.BoolVar(&o.reports.Reparse, "reparse", false, "Re-extract already processed reports from the cached PDFs")
@@ -146,6 +150,13 @@ func (a *app) runSync(cmd *cobra.Command, groups []string, o syncOptions) error 
 	defer done()
 
 	start := time.Now()
+	if o.actionsFrom != "" {
+		since, err := time.ParseInLocation("2006-01-02", o.actionsFrom, output.Colombo)
+		if err != nil {
+			return fmt.Errorf("parse --actions-since %q: want YYYY-MM-DD", o.actionsFrom)
+		}
+		plan.cse.ActionsSince = since
+	}
 	stages := csejobs.Plan(plan.cse, codes, start)
 	if plan.pdfs {
 		var fb reportjobs.Fallback

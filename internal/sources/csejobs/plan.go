@@ -17,6 +17,8 @@ type Scope struct {
 	Profiles   bool
 	Reports    bool
 	Actions    bool
+	// ActionsSince is where the actions search starts; zero means DefaultActionsWindow before now.
+	ActionsSince time.Time
 }
 
 // Plan builds the job stages for scope and the given security codes.
@@ -43,7 +45,11 @@ func Plan(scope Scope, codes []string, now time.Time) []engine.Stage {
 		bulk = append(bulk, Quotes(quotes))
 	}
 	if scope.Actions {
-		detail = append(detail, Actions())
+		since := scope.ActionsSince
+		if since.IsZero() {
+			since = now.Add(-DefaultActionsWindow)
+		}
+		detail = append(detail, Actions(since))
 	}
 	for _, code := range codes {
 		if scope.Info || scope.History {

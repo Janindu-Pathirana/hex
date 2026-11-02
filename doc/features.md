@@ -101,7 +101,7 @@ Report sections: valuation, profitability, growth, health, cashflow, income, tec
 | history | `price_bars` (accumulating daily bars) | 24h |
 | profile | `profiles`, `directors` | 7d |
 | reports | `reports` catalogue | 24h |
-| actions | `corporate_actions` (classified) | 24h |
+| actions | `corporate_actions`: dividends, scrip, sub-divisions, capitalisations and rights issues from `/api/smd`, with ex, record and payment dates, proportion text, parsed ratio, price and dividend per share (`--actions-since`) | 24h |
 | pdfs | PDF blobs, text, `report_pages` | 24h |
 | fundamentals | `extraction_runs`, `fundamentals` | 24h |
 
@@ -148,7 +148,7 @@ Cache location: `os.UserCacheDir()/hex/` (macOS `~/Library/Caches/hex/`), writes
 
 - No sector/market benchmarks, scores, bank/insurer rules, or `--narrate`. Technical indicators exist but use unadjusted prices.
 - The LLM fallback supports Claude only. A local Ollama backend, provider chaining and `--narrate` are planned in [llm-plan.md](llm-plan.md).
-- Corporate-action ex/record/payment dates never filled (detail endpoint unverified; `FinancialAnnouncements` client method unused).
+- Corporate actions have dates and ratios now, but prices are still not adjusted for them (next phase); most sub-division ratios are in attachments, not text.
 - `debt-equity` is in the registry but `analyze` never feeds it a debt input.
 - `company show-profile` / `show-financial` still hit cse.lk live.
 - Raw JSON responses cannot be re-parsed (`--reparse` covers PDFs only).

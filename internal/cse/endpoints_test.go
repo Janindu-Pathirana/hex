@@ -2,6 +2,7 @@ package cse_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -172,5 +173,69 @@ func TestIndexChart(t *testing.T) {
 	// cse.lk answers [] for an id it does not know.
 	if _, err := c.IndexChart(ctx, 2, cse.PeriodYear); !errors.Is(err, cse.ErrNoData) {
 		t.Fatalf("unknown chart: got %v, want ErrNoData", err)
+	}
+}
+
+func TestSecurityIDsAndSearchAnnouncements(t *testing.T) {
+	_, c := csetest.New(t)
+	ctx := context.Background()
+
+	ids, err := c.SecurityIDs(ctx)
+	if err != nil || len(ids) != 4 || ids["JKH"] != 508 || ids["COMB"] != 369 {
+		t.Fatalf("SecurityIDs = %v, %v", ids, err)
+	}
+	if _, ok := ids["OLDX"]; ok {
+		t.Error("a deleted security must not be returned")
+	}
+
+	rows, err := c.SearchAnnouncements(ctx, cse.SMDQuery{CompanyIDs: []int64{508, 369}, Categories: []string{"CASH DIVIDEND", "RIGHTS ISSUE"}, FromDate: "2018-01-01"})
+	if err != nil || len(rows) != 3 {
+		t.Fatalf("SearchAnnouncements = %d rows, %v", len(rows), err)
+	}
+	div := rows[0]
+	if div.ID != 39812 || div.Symbol != "JKH" || div.XD != "09-11-2026" || div.Payment != "27-11-2026" {
+		t.Fatalf("dividend = %+v", div)
+	}
+	if v, ok := div.VotingDivPerShare.Float(); !ok || v != 0.8 {
+		t.Errorf("DPS = %q", div.VotingDivPerShare)
+	}
+	rights := rows[1]
+	// A number in the JSON (price) and a string (share count) both decode to text.
+	if p, ok := rights.RightsPrice.Float(); !ok || p != 19 || rights.RightsShares != "52854857" {
+		t.Errorf("rights price %q shares %q", rights.RightsPrice, rights.RightsShares)
+	}
+	if rights.RightsProportion != "03 Ordinary Voting share for every 14 existing Ordinary Voting shares" {
+		t.Errorf("proportion = %q", rights.RightsProportion)
+	}
+}
+
+func TestSearchAnnouncementsValidation(t *testing.T) {
+	_, c := csetest.New(t)
+	ctx := context.Background()
+	for name, q := range map[string]cse.SMDQuery{
+		"no company":  {Categories: []string{"CASH DIVIDEND"}},
+		"no category": {CompanyIDs: []int64{508}},
+	} {
+		if _, err := c.SearchAnnouncements(ctx, q); err == nil || !strings.Contains(err.Error(), "400") {
+			t.Errorf("%s: err = %v, want an HTTP 400", name, err)
+		}
+	}
+}
+
+func TestTextDecodesStringsNumbersAndNull(t *testing.T) {
+	var v struct {
+		A, B, C, D cse.Text
+	}
+	if err := json.Unmarshal([]byte(`{"A":"1 for 43.90","B":2.4,"C":null,"D":" 17,400 "}`), &v); err != nil {
+		t.Fatal(err)
+	}
+	if v.A != "1 for 43.90" || v.B != "2.4" || v.C != "" || v.D != "17,400" {
+		t.Fatalf("decoded = %+v", v)
+	}
+	if f, ok := v.D.Float(); !ok || f != 17400 {
+		t.Errorf("Float with a thousands separator = %v, %v", f, ok)
+	}
+	if _, ok := v.A.Float(); ok {
+		t.Error("text that is not a number must not parse")
 	}
 }

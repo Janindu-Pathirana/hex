@@ -1,0 +1,18 @@
+{"Financial Statements":{},"CSE Reports":{},"Announcement":{
+"CASH DIVIDEND":[
+{"id":39812,"secId":508,"company":"JOHN KEELLS HOLDINGS PLC","symbol":"JKH","dateOfAnnouncement":"29-10-2026","announcementCategory":"CASH DIVIDEND","remarks":"FIRST INTERIM DIVIDEND FOR THE FINANCIAL YEAR ENDING 31ST MARCH 2027","xd":"09-11-2026","recordDate":"10-11-2026","payment":"27-11-2026","votingDivPerShare":0.8,"nonVotingDivPerShare":0,"agm":null,"xc":null,"proportion":null,"allotment":null,"xr":null}
+],
+"SCRIP DIVIDEND":[
+{"id":35344,"secId":372,"company":"C I C HOLDINGS PLC","symbol":"CIC","dateOfAnnouncement":"28-11-2025","announcementCategory":"SCRIP DIVIDEND","remarks":"Interim Dividend for the Financial Year ending 31st March 2026- Cash or Scrip Dividend","votingPropotion":"1 for 43.90","votingConsideration":43.9,"xd":"13-02-2026","recordDate":"16-02-2026","payment":"05-03-2026","childAnnouncement":35344}
+],
+"SUB-DIVISION OF SHARES":[
+{"id":36079,"secId":369,"company":"COMMERCIAL BANK OF CEYLON PLC","symbol":"COMB","dateOfAnnouncement":"02-02-2026","announcementCategory":"SUB-DIVISION OF SHARES","remarks":"Subdividing every one (1) existing ordinary share into four (4) ordinary shares, with no change to the stated capital of the Company","tradingCommencement":"20-03-2026","tradingSuspended":"17-03-2026","subDivisionBasedOnShareholdingsAsAt":"16-03-2026","childAnnouncement":null},
+{"id":22456,"secId":508,"company":"JOHN KEELLS HOLDINGS PLC","symbol":"JKH","dateOfAnnouncement":"30-07-2024","announcementCategory":"SUB-DIVISION OF SHARES","remarks":"Sub-division of Shares 2024","tradingCommencement":null}
+],
+"CAPITALIZATION OF RESERVES":[
+{"id":17758,"secId":372,"company":"C I C HOLDINGS PLC","symbol":"CIC","dateOfAnnouncement":"01-12-2022","announcementCategory":"CAPITALIZATION OF RESERVES","remarks":"Capitalization of Reserves","xc":"13-12-2022","dateAllotment":"15-12-2022","votingPropotion":"1 share for every 17.5287357329","votingConsideration":17400000}
+],
+"RIGHTS ISSUE":[
+{"id":36348,"secId":369,"company":"COMMERCIAL BANK OF CEYLON PLC","symbol":"COMB","dateOfAnnouncement":"06-02-2026","announcementCategory":"RIGHTS ISSUE","remarks":"RIGHTS ISSUE","xr":"17-04-2026","recordDate":"20-04-2026","allotment":"27-04-2026","tradingCommencement":"04-05-2026","numOfVotingShrsIssued":"52854857","votingShrsPropToBeIssued":"03 Ordinary Voting share for every 14 existing Ordinary Voting shares","votingShareConsideration":19},
+{"id":22083,"secId":999,"company":"OLD DELISTED PLC","symbol":"OLDX","dateOfAnnouncement":"20-11-2023","announcementCategory":"RIGHTS ISSUE","remarks":"LEVEL OF SUBSCRIPTION"}
+]}}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/Janindu-Pathirana/hex/internal/cse"
@@ -179,18 +181,52 @@ func Reports(code string) engine.Job {
 	}}
 }
 
-// Actions stores the recent corporate announcements, matched to securities.
-func Actions() engine.Job {
+// DefaultActionsWindow is how far back the actions job looks when no start
+// date is given: long enough to hold the last ex-date of an annual dividend.
+const DefaultActionsWindow = 400 * 24 * time.Hour
+
+// Actions stores corporate announcements from since to today (dividends,
+// scrip dividends, sub-divisions, capitalisations, rights issues), with their
+// dates and proportions, matched to securities by ticker. It searches the
+// website's announcement search 20 companies at a time. Pass an earlier
+// since, with --force, to backfill.
+func Actions(since time.Time) engine.Job {
 	return engine.FuncJob{K: KindActions, Kd: KindActions, T: 24 * time.Hour, F: func(ctx context.Context, env *engine.Env) error {
-		anns, err := env.CSE.Announcements(ctx)
-		if err != nil {
-			return fmt.Errorf("fetch announcements: %w", err)
-		}
 		secs, err := env.Store.Securities(ctx)
 		if err != nil {
 			return err
 		}
-		return env.Store.Update(ctx, func(tx *store.Tx) error { return tx.UpsertActions(ctx, ActionRows(anns, secs)) })
+		ids, err := env.CSE.SecurityIDs(ctx)
+		if err != nil {
+			return fmt.Errorf("fetch security ids: %w", err)
+		}
+		tickers := map[string]bool{}
+		for _, s := range secs {
+			tickers[strings.ToUpper(s.Ticker)] = true
+		}
+		var companyIDs []int64
+		for t, id := range ids {
+			if tickers[t] {
+				companyIDs = append(companyIDs, id)
+			}
+		}
+		sort.Slice(companyIDs, func(i, j int) bool { return companyIDs[i] < companyIDs[j] })
+
+		q := cse.SMDQuery{Categories: cse.SMDCategories, FromDate: since.In(output.Colombo).Format("2006-01-02"),
+			ToDate: time.Now().In(output.Colombo).Format("2006-01-02")}
+		var rows []cse.SMDAnnouncement
+		for i := 0; i < len(companyIDs); i += cse.SMDMaxCompanies {
+			q.CompanyIDs = companyIDs[i:min(i+cse.SMDMaxCompanies, len(companyIDs))]
+			got, err := env.CSE.SearchAnnouncements(ctx, q)
+			if errors.Is(err, cse.ErrNoData) {
+				continue
+			}
+			if err != nil {
+				return fmt.Errorf("search announcements for companies %d to %d: %w", i+1, i+len(q.CompanyIDs), err)
+			}
+			rows = append(rows, got...)
+		}
+		return env.Store.Update(ctx, func(tx *store.Tx) error { return tx.UpsertActions(ctx, ActionRows(rows, secs)) })
 	}}
 }
 

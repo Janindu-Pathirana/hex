@@ -37,7 +37,7 @@ func TestMigrateIsIdempotent(t *testing.T) {
 			t.Fatalf("open %d: %v", i, err)
 		}
 		v, err := db.SchemaVersion(ctx)
-		if err != nil || v != 1 {
+		if err != nil || v != 2 {
 			t.Fatalf("schema version = %d, %v", v, err)
 		}
 		db.Close()
@@ -243,5 +243,46 @@ func TestAuditStats(t *testing.T) {
 	}
 	if f := fs[0]; f.Periods != 2 || f.Values != 3 || f.Newest != "2025-06-30" || f.Low != 1 || f.MinConf != 0.5 {
 		t.Fatalf("fundamentals = %+v", f)
+	}
+}
+
+func TestActionsRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	db := open(t)
+	num, den, price, dps := 3.0, 14.0, 19.0, 0.8
+	update(t, db, func(tx *store.Tx) error {
+		return tx.UpsertActions(ctx, []store.CorporateAction{
+			{ID: 2, Code: "COMB.N0000", Ticker: "COMB", SecID: 369, Company: "COMMERCIAL BANK", Category: "RIGHTS ISSUE",
+				Kind: store.ActionRights, Announced: "2026-02-06", Raw: "{}", ExDate: "2026-04-17", XR: "2026-04-17",
+				RecordDate: "2026-04-20", AllotmentDate: "2026-04-27", Proportion: "3 for 14", RatioNum: &num, RatioDen: &den,
+				Price: &price, ChildID: 36348},
+			{ID: 1, Company: "OTHER", Category: "CASH DIVIDEND", Kind: store.ActionDividend, Announced: "2026-10-29", Raw: "{}", DPS: &dps},
+		})
+	})
+	all, err := db.Actions(ctx, "")
+	if err != nil || len(all) != 2 || all[0].ID != 1 { // newest announcement first
+		t.Fatalf("Actions = %+v, %v", all, err)
+	}
+	div := all[0]
+	if div.Code != "" || div.ExDate != "" || div.RatioNum != nil || div.DPS == nil || *div.DPS != 0.8 || div.SecID != 0 {
+		t.Fatalf("dividend with empty fields = %+v", div)
+	}
+	comb, err := db.Actions(ctx, "COMB.N0000")
+	if err != nil || len(comb) != 1 {
+		t.Fatalf("COMB actions = %+v, %v", comb, err)
+	}
+	r := comb[0]
+	if r.ExDate != "2026-04-17" || r.XR != "2026-04-17" || r.AllotmentDate != "2026-04-27" || r.SecID != 369 || r.ChildID != 36348 ||
+		r.RatioNum == nil || *r.RatioNum != 3 || *r.RatioDen != 14 || r.Price == nil || *r.Price != 19 || r.Proportion != "3 for 14" {
+		t.Fatalf("rights = %+v", r)
+	}
+	// Upserting the same id again replaces the row.
+	update(t, db, func(tx *store.Tx) error {
+		return tx.UpsertActions(ctx, []store.CorporateAction{{ID: 2, Code: "COMB.N0000", Company: "COMMERCIAL BANK", Category: "RIGHTS ISSUE",
+			Kind: store.ActionRights, Announced: "2026-02-06", Raw: "{}"}})
+	})
+	comb, _ = db.Actions(ctx, "COMB.N0000")
+	if len(comb) != 1 || comb[0].ExDate != "" || comb[0].RatioNum != nil {
+		t.Fatalf("after replace = %+v", comb)
 	}
 }
