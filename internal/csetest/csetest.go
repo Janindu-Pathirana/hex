@@ -2,6 +2,7 @@
 package csetest
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -126,6 +127,23 @@ func New(t testing.TB) (*Server, *cse.Client) {
 			_, _ = w.Write(chart)
 		default:
 			_, _ = w.Write([]byte(`{"chartData":[],"id":0}`))
+		}
+	})
+	static("GET /api/cntSecurity", "cntSecurity.json")
+	smd := Fixture(t, "smd.json")
+	mux.HandleFunc("POST /api/smd", func(w http.ResponseWriter, r *http.Request) {
+		var q struct {
+			CompanyIDs []int64  `json:"companyIds"`
+			Categories []string `json:"categories"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&q)
+		switch { // the validation messages cse.lk answers with
+		case len(q.CompanyIDs) == 0:
+			http.Error(w, `{"status":"CLIENT_ERROR","statusCode":400,"validationFailures":[{"field":"Company error","code":"one or more company should select"}]}`, http.StatusBadRequest)
+		case len(q.Categories) == 0:
+			http.Error(w, `{"status":"CLIENT_ERROR","statusCode":400,"validationFailures":[{"field":"Category error","code":"one or more category should select"}]}`, http.StatusBadRequest)
+		default:
+			_, _ = w.Write(smd)
 		}
 	})
 	indexCharts := map[string][]byte{"1": Fixture(t, "chartData_1.json"), "40": Fixture(t, "chartData_40.json")}
