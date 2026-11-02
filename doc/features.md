@@ -20,6 +20,7 @@ Build and install steps are in the root [readme.md](../readme.md).
 | `hex reports extract <SYM>` | Download and read one report now | `--period`, `--llm`, `--llm-model`, `--show-pages` | `cmd/reports.go` |
 | `hex fundamentals show <SYM>` | Winning stored values with source, page, label, confidence | `--all`, `--scope`, `--period` | `cmd/fundamentals.go` |
 | `hex fundamentals set <SYM>` | Manual override at confidence 1.0 | `--period`, `--type`, `--scope`, `--field name=value` | `cmd/fundamentals.go` |
+| `hex data audit [SYMBOL...]` | How complete the stored data is per company: bars, longest gap, statement periods and confidence, reports, quote age, index coverage, with flags that name the fix | `--json` | `cmd/data.go`, `cmd/data/audit.go` |
 | `hex clean all\|securities\|pdf\|db\|raw` | Clear caches / database | none | `cmd/clean.go` |
 | `hex version`, `hex completion <shell>` | Version, shell completion (symbols complete) | none | `cmd/version.go`, `cmd/args.go` |
 
@@ -93,7 +94,8 @@ Report sections: valuation, profitability, growth, health, cashflow, income, tec
 | Job | Writes | TTL |
 |---|---|---|
 | securities | `securities` | 24h |
-| market | `meta`, `index_bars` (ASPI, S&P SL20, sectors), `market_daily` | 12h (15 min market open) |
+| market | `meta`, `index_bars` (today's ASPI, S&P SL20, sectors), `market_daily` (latest two days) | 12h (15 min market open) |
+| index | `index_bars`: a year of daily ASPI and S&P SL20 levels (`chartData`, ids 1 and 40) | 24h |
 | quotes | `quotes`, share counts | 12h (5 min open) |
 | info | `quote_stats`, security detail | 24h |
 | history | `price_bars` (accumulating daily bars) | 24h |

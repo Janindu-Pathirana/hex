@@ -45,8 +45,8 @@ Synced `securities market quotes actions` plus `info history profiles reports` f
 | # | Finding | Status |
 |---|---|---|
 | 1 | One-year windows failed by a few days ("needs history from 2025-10-30", first bar 2025-11-03) | **Fixed here**: a window may start up to 7 days before the first bar |
-| 2 | `index_bars` and `market_daily` hold only 2 days, so every ASPI/S&P SL20 comparison and market trend is `n/m` | Open: needs an index history job (`chartData` for ASPI and S&P SL20, one year per fetch) |
-| 3 | Default of 4 quarterly reports gives no prior-year period, so growth, margin change, Piotroski show `n/m` (JKH: 2 of 8 tests) | Open: raise the default to at least 6 quarters, or fetch the prior-year report for each |
+| 2 | `index_bars` and `market_daily` hold only 2 days, so every ASPI/S&P SL20 comparison and market trend is `n/m` | **Fixed for the indices**: `hex sync index` stores a year of ASPI and S&P SL20 levels. `market_daily` still has 2 days (the endpoint returns only the latest), so turnover and foreign flow build up with daily syncs |
+| 3 | Default of 4 quarterly reports gives no prior-year period, so growth, margin change, Piotroski show `n/m` (JKH: 2 of 8 tests) | **Fixed**: default is 6 reports; JKH now shows revenue growth +24.1%, margin changes and Piotroski 5 of 6 |
 | 4 | SAMP (bank): "no statement values found" for a report; EPS, ROE, cash flow all missing | Open: bank statement layouts need extractor work (P4 bank rules) |
 | 5 | JKH: capex and debt not extracted, so FCF and debt/equity are missing | Open: label dictionary |
 | 6 | Several values at confidence 0.65 ("few identities could be checked") | Expected; shows in the data-quality finding |
@@ -58,3 +58,7 @@ Synced `securities market quotes actions` plus `info history profiles reports` f
 - Corporate-action dates and ratios exist, but from `/api/smd`, not from `approvedAnnouncement`: switch the Actions job to it (per-company, chunked, categories from `/api/smd/categories`).
 - Adjustment factors need a text ratio parser with a manual override, because sub-division ratios are free text and sometimes missing. Rights issues need the issue price and the pre-ex close to compute a theoretical ex-rights factor; that data exists (`votingShareConsideration`, proportion text).
 - The chart is raw, so adjustment is required, not optional.
+
+## 5. Index charts: `POST /api/chartData`
+
+Verified 2026-11-02. Form body `chartId=<id>&period=5`. `chartId=1` is the ASPI and **`chartId=40` is the S&P SL20** (found in the site's own code; ids 2 to 8 return `[]`). The response is a plain array of `{d (ms), v (level), pc (percent change)}`, 240 daily points for `period=5`. `d` is a time on the trade date, not midnight. The `fromDate`/`toDate` fields the site can send are ignored for `period=5`, so history beyond a year has to be accumulated.
