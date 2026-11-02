@@ -54,6 +54,17 @@ Legend: `[ ]` open, `[x]` done. Each task ends with "Done when".
 - [ ] LLM extraction of audit opinion, going concern, outlook (verify against page text). [pdf-extraction]
 - [ ] Announcement classifier (tone) and optional news ingest. Opt-in, last.
 
+## P5a: Local LLMs (Ollama) and AI features
+Design, rules and risks are in [llm-plan.md](llm-plan.md). Every model output is verified against its source before it is stored or printed.
+- [ ] **A1 Split `internal/llm`**: move `Verify`, prompt text, field list and schema out of `claude.go` into shared files; add `Config` and `NewFallback`; `cmd/reports.go` and `cmd/sync.go` use it. No behaviour change. Done when: existing `claude_test.go` cases pass unchanged. [go-conventions, pdf-extraction]
+- [ ] **A2 Ollama backend** (`internal/llm/ollama.go`): `/api/chat` with a JSON-schema `format`, temperature 0, explicit `num_ctx` and truncation check, own long-timeout client, reachability and missing-model errors, `ErrNeedsVision` for scanned PDFs. Done when: fake-server tests cover valid, invalid, truncated, down and timeout cases. [pdf-extraction, go-testing]
+- [ ] **A3 Flags**: `--llm-provider claude|ollama|ollama,claude` on `hex sync` and `hex reports extract`; per-provider default model; `HEX_OLLAMA_URL`. Chain falls through to Claude below 0.7 confidence, on error, or when scanned. Done when: a chained run on a scanned fixture reaches the fake Anthropic and a confident local run does not. [add-command]
+- [ ] **A4 Model eval** (`HEX_OLLAMA_EVAL=1`, not in normal tests): run `qwen3:14b`, `qwen2.5:7b`, `llama3.2:3b` over `testdata/extract/`; record recovered values and verification rejections in `llm-plan.md`. Done when: a default model is chosen from the numbers.
+- [ ] **B1 `internal/narrate`**: report JSON in, `{summary, strengths, risks, watch}` out with a `ref` per claim; number check against the report with one retry. Done when: an invented number is rejected in tests. [go-testing]
+- [ ] **B2 `hex analyze --narrate`** (`--narrate-provider`, `--narrate-model`, default Ollama): text block and `--json` `narrative` field, disclaimer kept, output unchanged without the flag. Done when: goldens for both modes. [terminal-output]
+- [ ] **C1 Announcement parsing**: after the P1 detail-endpoint check, extract ex/record/payment dates, amount and ratio from announcement text, verify against the text, store with `source = llm`. Done when: dividend, bonus, rights and split fixtures give the expected rows. [cse-api, scrape-engine]
+- [ ] **D** (later): audit opinion / going concern / outlook extraction (P5), announcement tone, embeddings for `hex search`.
+
 ## P6: CBSL macro (new source)
 - [ ] Add CBSL jobs: policy rates, AWPLR, T-bill / bond yields, CCPI, USD/LKR, reserves, money supply, credit growth. [scrape-engine, sqlite-store]
 - [ ] Migration `0002` for `macro_series` (series_id, date, value, published_at).
@@ -81,7 +92,7 @@ Legend: `[ ]` open, `[x]` done. Each task ends with "Done when".
 - [ ] Regularised logistic model, then gradient boosting (monotonic constraints). Decide Go-native vs exported model.
 - [ ] Probability calibration (isotonic / Platt).
 - [ ] `hex predict <SYMBOL>`: probability, expected range, confidence, data coverage, top drivers (SHAP-style), disclaimer.
-- [ ] Optional `--narrate` (LLM explanation of already-computed numbers only).
+- [ ] Optional `--narrate` (LLM explanation of already-computed numbers only). `hex analyze --narrate` is planned first as P5a B1/B2; extend it to `predict` here.
 - [ ] Only ship a model that beats the baselines out of sample.
 
 ## P10: Product and operations

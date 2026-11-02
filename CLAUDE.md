@@ -31,7 +31,7 @@ go build -ldflags "-X github.com/Janindu-Pathirana/hex/cmd.Version=0.1.0" -o hex
 | `internal/sources/reportjobs/` | `PDFs` (download + text) and `Fundamentals` (extract, store, optional LLM fallback) jobs |
 | `internal/pdfx/` | PDF text with positions (`Pure` ledongthuc/pdf, `Poppler` if installed), safety caps, scanned detection, `Blobs` (PDFs by SHA-256); `pdftest` builds test PDFs |
 | `internal/extract/` | Statement reader: titles, dated header columns, label dictionary (`Fields`), units, identity checks, confidence |
-| `internal/llm/` | Opt-in Claude fallback (`claude-opus-5-5`); verifies every figure against the page text |
+| `internal/llm/` | Opt-in Claude fallback (`claude-opus-5-5`); verifies every figure against the page text. Planned: Ollama backend, provider chain, `internal/narrate` (see `doc/llm-plan.md`) |
 | `internal/csetest/` | Fake cse.lk server for tests, backed by `testdata/cse/` fixtures |
 | `internal/cache/` | JSON file cache: `Load`/`Save` (atomic)/`Remove`/`RemoveAll`; `HEX_CACHE_DIR` overrides the root |
 | `internal/const.go` | `CacheDir`, `CacheConfig` per cached source, `AllCaches` |
@@ -48,13 +48,14 @@ go build -ldflags "-X github.com/Janindu-Pathirana/hex/cmd.Version=0.1.0" -o hex
 - Fundamentals carry `source` (pdf, llm, manual), report, page, label and confidence. Manual values win when read. Never store an LLM figure that was not checked (see `pdf-extraction`).
 - Cache files live in `os.UserCacheDir()/hex/<file>` (or `$HEX_CACHE_DIR`). Every new cache gets a `CacheConfig` in `internal/const.go`, an entry in `AllCaches`, **and** a subcommand under `hex clean` in `cmd/clean.go`.
 - Symbols: users type `jkh` or `CIC.X0000`; resolve with `company.Resolve` (case-insensitive, prefers `.N0000`, keeps X/U series). The API gets the full code.
-- Tests never hit the real cse.lk or the Anthropic API. Use `csetest.New(t)` (`Override` to replace a route), `t.Setenv(cache.EnvDir, t.TempDir())` and `t.Setenv(store.EnvDir, t.TempDir())`.
+- Any model output (Claude or local) is checked against its source before it is stored or printed, and every LLM feature is opt-in. Local models: Ollama at `HEX_OLLAMA_URL` (default `http://localhost:11434`), never the shared 30s `httpclient.Default`.
+- Tests never hit the real cse.lk, the Anthropic API or an Ollama server. Use `csetest.New(t)` (`Override` to replace a route), `t.Setenv(cache.EnvDir, t.TempDir())` and `t.Setenv(store.EnvDir, t.TempDir())`.
 - `go build` needs `GOFLAGS=-buildvcs=false` on this machine (`/usr/local/bin/git` is an x86 binary Go cannot run).
 - Analysis output is informational, not investment advice. Keep that disclaimer on analysis commands.
 
 ## Roadmap
 
-The approved data-platform plan (CSE + CBSL sources, SQLite store, PDF fundamentals, analysis) is phased: 0 foundation (done), 1 store and sync (done: scrape engine), 2 history (done: accumulated daily bars), 3 corporate actions (partial: announcements stored and classified by category; dates need the unverified detail endpoint), 4 technical analysis (`hex analyze` phase 1 done: fundamentals, valuation, growth, cash, dividends, data-quality findings; phase 2 done: price/volume indicators in `internal/analysis/technical.go`, `--section technical`, on unadjusted prices; liquidity metrics and gate in `liquidity.go`; market context from `market_daily` in `market.go`; benchmarks, scores, bank/insurer rules and opt-in `--narrate` are next), 5 fundamentals from PDFs (done: rules + opt-in LLM), 6 CBSL macro, 7 screener/watchlist/portfolio and release.
+The approved data-platform plan (CSE + CBSL sources, SQLite store, PDF fundamentals, analysis) is phased: 0 foundation (done), 1 store and sync (done: scrape engine), 2 history (done: accumulated daily bars), 3 corporate actions (partial: announcements stored and classified by category; dates need the unverified detail endpoint), 4 technical analysis (`hex analyze` phase 1 done: fundamentals, valuation, growth, cash, dividends, data-quality findings; phase 2 done: price/volume indicators in `internal/analysis/technical.go`, `--section technical`, on unadjusted prices; liquidity metrics and gate in `liquidity.go`; market context from `market_daily` in `market.go`; benchmarks, scores, bank/insurer rules and opt-in `--narrate` are next), 5 fundamentals from PDFs (done: rules + opt-in Claude; local Ollama backend, `--narrate` and announcement parsing planned in `doc/llm-plan.md`, tasks P5a in `doc/tasks.md`), 6 CBSL macro, 7 screener/watchlist/portfolio and release.
 
 ## Known tech debt (fix when touching the area)
 
