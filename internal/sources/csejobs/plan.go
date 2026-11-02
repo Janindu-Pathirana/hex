@@ -10,6 +10,7 @@ import (
 type Scope struct {
 	Securities bool
 	Market     bool
+	Index      bool // daily ASPI and S&P SL20 history
 	Quotes     bool
 	Info       bool
 	History    bool
@@ -34,6 +35,9 @@ func Plan(scope Scope, codes []string, now time.Time) []engine.Stage {
 	}
 	if scope.Market {
 		bulk = append(bulk, Market(live))
+	}
+	if scope.Index {
+		bulk = append(bulk, IndexHistory())
 	}
 	if scope.Quotes {
 		bulk = append(bulk, Quotes(quotes))

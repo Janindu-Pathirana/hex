@@ -128,6 +128,14 @@ func New(t testing.TB) (*Server, *cse.Client) {
 			_, _ = w.Write([]byte(`{"chartData":[],"id":0}`))
 		}
 	})
+	indexCharts := map[string][]byte{"1": Fixture(t, "chartData_1.json"), "40": Fixture(t, "chartData_40.json")}
+	mux.HandleFunc("POST /api/chartData", func(w http.ResponseWriter, r *http.Request) {
+		if b, ok := indexCharts[r.FormValue("chartId")]; ok {
+			_, _ = w.Write(b)
+			return
+		}
+		_, _ = w.Write([]byte(`[]`)) // what cse.lk returns for an unknown chart id
+	})
 	mux.HandleFunc("GET /cdn/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, filepath.Join(TestdataDir(), "pdf", path.Base(r.URL.Path)))
 	})

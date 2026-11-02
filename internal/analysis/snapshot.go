@@ -49,6 +49,7 @@ type Snapshot struct {
 	bars   []Bar       // daily history of the stock, oldest first (see WithBars)
 	index  []Bar       // daily history of the benchmark index
 	market []MarketDay // market-wide daily statistics, oldest first
+	sl20   []Bar       // daily S&P SL20 levels (Close), oldest first
 }
 
 // NewSnapshot groups rows into a series per field, newest period first. When

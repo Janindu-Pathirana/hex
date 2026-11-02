@@ -156,3 +156,21 @@ func TestDownloadPDF(t *testing.T) {
 		})
 	}
 }
+
+func TestIndexChart(t *testing.T) {
+	_, c := csetest.New(t)
+	ctx := context.Background()
+
+	aspi, err := c.IndexChart(ctx, cse.ChartASPI, cse.PeriodYear)
+	if err != nil || len(aspi) != 5 || aspi[0].Value != 23115.12 || aspi[0].D != 1762397160000 {
+		t.Fatalf("ASPI chart = %+v, %v", aspi, err)
+	}
+	snp, err := c.IndexChart(ctx, cse.ChartSPSL20, cse.PeriodYear)
+	if err != nil || len(snp) != 4 {
+		t.Fatalf("S&P SL20 chart = %d, %v", len(snp), err)
+	}
+	// cse.lk answers [] for an id it does not know.
+	if _, err := c.IndexChart(ctx, 2, cse.PeriodYear); !errors.Is(err, cse.ErrNoData) {
+		t.Fatalf("unknown chart: got %v, want ErrNoData", err)
+	}
+}

@@ -135,3 +135,29 @@ func TestMarketSectionAndRegistry(t *testing.T) {
 		}
 	}
 }
+
+func TestMarketUsesIndexHistoryWhenMarketDaysAreFew(t *testing.T) {
+	// The market-day statistics cover only the last few days; index history
+	// carries the levels for the longer windows.
+	idx := bars(100)  // ASPI 100..199 from 2025-01-01
+	sl20 := bars(100) // S&P SL20 100..199
+	for i := range idx {
+		idx[i].Close = 10000 + 10*float64(i)
+		sl20[i].Close = 3000 + 3*float64(i)
+	}
+	s := techSnapshot(bars(100), idx).WithSL20(sl20).WithMarket(marketDays(2))
+	m := Compute(s)
+	near := func(id string, want float64) {
+		t.Helper()
+		if got := techVal(t, m, id); math.Abs(got-want) > 1e-9 {
+			t.Errorf("%s = %v, want %v", id, got, want)
+		}
+	}
+	near("aspi-return-3m", 10990.0/10090-1)
+	near("aspi-vs-sma-50", 10990/10745.0-1)
+	near("rel-strength-spsl20-3m", (199.0/109-1)-(3297.0/3027-1))
+	// Flow and turnover still need the market days.
+	if x, _ := m.Get("foreign-net-flow-20"); x.Value != nil {
+		t.Errorf("foreign flow = %+v, want n/m with two market days", x)
+	}
+}

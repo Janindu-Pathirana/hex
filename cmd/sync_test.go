@@ -82,7 +82,7 @@ func TestSyncDryRunFetchesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out, "3 would run") || srv.Hits.Load() != 0 {
+	if !strings.Contains(out, "4 would run") || srv.Hits.Load() != 0 {
 		t.Fatalf("dry run made %d requests:\n%s", srv.Hits.Load(), out)
 	}
 }

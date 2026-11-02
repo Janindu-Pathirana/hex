@@ -25,7 +25,7 @@ import (
 const defaultRPS = 5
 
 // syncGroups are the data groups "hex sync" accepts, in help order.
-var syncGroups = []string{"market", "securities", "quotes", "info", "history", "profiles", "reports", "actions", "pdfs", "fundamentals", "all"}
+var syncGroups = []string{"market", "index", "securities", "quotes", "info", "history", "profiles", "reports", "actions", "pdfs", "fundamentals", "all"}
 
 type syncOptions struct {
 	symbols     []string
@@ -53,15 +53,15 @@ func newSyncCmd(a *app) *cobra.Command {
 		Short: "Scrape cse.lk into the local database",
 		Long: `Scrape cse.lk into the local database (` + "`hex sync status`" + ` shows what is stored).
 
-Groups: market (status, indices, sectors, daily stats), securities (symbol
-list), quotes (today's prices), and per company: info (stockId, ranges,
+Groups: market (status, indices, sectors, daily stats), index (a year of daily
+ASPI and S&P SL20 levels), securities (symbol list), quotes (today's prices), and per company: info (stockId, ranges,
 beta), history (daily bars, accumulated beyond one year), profiles,
 reports (PDF catalogue), pdfs (download the newest reports and store
 their text) and fundamentals (read income statement, balance sheet and cash
 flow figures from that text). actions stores recent corporate announcements. "all" selects
 every group.
 
-With no group, hex syncs market, securities and quotes, plus info, history,
+With no group, hex syncs market, index, securities and quotes, plus info, history,
 profiles and reports for any --symbols. Work done within its freshness
 window is skipped unless --force is given; an interrupted sync resumes
 where it stopped. Requests are rate-limited and run at most 4 at a time.`,
@@ -99,13 +99,13 @@ where it stopped. Requests are rate-limited and run at most 4 at a time.`,
 // syncScope turns the group arguments into a plan.
 func syncScope(groups []string, haveSymbols bool) syncPlan {
 	if len(groups) == 0 {
-		return syncPlan{cse: csejobs.Scope{Market: true, Securities: true, Quotes: true,
+		return syncPlan{cse: csejobs.Scope{Market: true, Index: true, Securities: true, Quotes: true,
 			Info: haveSymbols, History: haveSymbols, Profiles: haveSymbols, Reports: haveSymbols}}
 	}
 	has := func(g string) bool { return slices.Contains(groups, g) || slices.Contains(groups, "all") }
 	p := syncPlan{
 		cse: csejobs.Scope{
-			Market: has("market"), Securities: has("securities"), Quotes: has("quotes"), Info: has("info"),
+			Market: has("market"), Index: has("index"), Securities: has("securities"), Quotes: has("quotes"), Info: has("info"),
 			History: has("history"), Profiles: has("profiles"), Reports: has("reports"), Actions: has("actions"),
 		},
 		pdfs:         has("pdfs") || has("fundamentals"),
