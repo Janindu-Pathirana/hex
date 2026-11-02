@@ -342,3 +342,19 @@ func TestTechnicalSection(t *testing.T) {
 		t.Errorf("Sections() = %v, want technical", Sections())
 	}
 }
+
+func TestPeriodReturnToleratesHistoryStartingJustAfterWindow(t *testing.T) {
+	b := bars(400) // first bar 2025-01-01
+	// A window starting 5 days before the first bar uses the first close.
+	got, ok := periodReturn(b, b[0].Date.AddDate(0, 0, -5))
+	if !ok || math.Abs(got-(499.0/100-1)) > 1e-9 {
+		t.Errorf("5 days short: %v %v", got, ok)
+	}
+	// Exactly 7 days short still counts; 8 does not.
+	if _, ok := periodReturn(b, b[0].Date.AddDate(0, 0, -7)); !ok {
+		t.Error("7 days short should count")
+	}
+	if _, ok := periodReturn(b, b[0].Date.AddDate(0, 0, -8)); ok {
+		t.Error("8 days short should not count")
+	}
+}

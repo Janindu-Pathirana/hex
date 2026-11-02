@@ -311,13 +311,22 @@ func closeOnOrBefore(bars []Bar, d time.Time) (float64, bool) {
 	return 0, false
 }
 
+// startTolerance is how many days after a window's start the history may
+// begin and still count for it. The CSE chart returns about a year of bars, so
+// a one-year window usually starts a few days before the first bar.
+const startTolerance = 7 * 24 * time.Hour
+
 // periodReturn is the change from the last close on or before start to the
-// last bar's close.
+// last bar's close. When the history starts up to a week after start, the
+// first close stands in for it.
 func periodReturn(bars []Bar, start time.Time) (float64, bool) {
 	if len(bars) == 0 {
 		return 0, false
 	}
 	c0, ok := closeOnOrBefore(bars, start)
+	if !ok && bars[0].Date.Sub(start) <= startTolerance {
+		c0, ok = bars[0].Close, true
+	}
 	if !ok || c0 <= 0 {
 		return 0, false
 	}

@@ -145,6 +145,7 @@ Cache location: `os.UserCacheDir()/hex/` (macOS `~/Library/Caches/hex/`), writes
 ## 10. Known gaps
 
 - No sector/market benchmarks, scores, bank/insurer rules, or `--narrate`. Technical indicators exist but use unadjusted prices.
+- The LLM fallback supports Claude only. A local Ollama backend, provider chaining and `--narrate` are planned in [llm-plan.md](llm-plan.md).
 - Corporate-action ex/record/payment dates never filled (detail endpoint unverified; `FinancialAnnouncements` client method unused).
 - `debt-equity` is in the registry but `analyze` never feeds it a debt input.
 - `company show-profile` / `show-financial` still hit cse.lk live.
@@ -162,6 +163,6 @@ Cache location: `os.UserCacheDir()/hex/` (macOS `~/Library/Caches/hex/`), writes
 | 2 | Price history (accumulated daily bars) | done |
 | 3 | Corporate actions | announcements stored; dates and price adjustment pending |
 | 4 | Technical analysis | fundamentals and price/volume indicators done; benchmarks, scores pending |
-| 5 | Fundamentals from PDFs | done (rules + opt-in LLM) |
+| 5 | Fundamentals from PDFs | done (rules + opt-in Claude); Ollama backend and `--narrate` planned ([llm-plan.md](llm-plan.md)) |
 | 6 | CBSL macro | not started |
 | 7 | Screener, watchlist, portfolio, release | not started |
